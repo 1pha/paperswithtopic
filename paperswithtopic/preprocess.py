@@ -1,10 +1,11 @@
 import os
 import time
+import yaml
 import numpy as np
 import pandas as pd
 from gensim.models import FastText
 
-from .config import load_config
+from .config import load_config, edict2dict
 
 def logging_time(original_fn):
 
@@ -29,7 +30,10 @@ class Preprocess:
 
 
     @logging_time
-    def load_data(self, path):
+    def load_data(self, path=None):
+
+        if path is None:
+            path = os.path.join(self.cfg.DATA_DIR, self.cfg.file_name)
 
         df = pd.read_csv(path, index_col=0)
         df[df >= 1] = 1
@@ -40,8 +44,13 @@ class Preprocess:
         return df
 
     @property
-    def get_label(self):
-        return self.paper_df.values
+    def label(self):
+        try: 
+            return self.paper_df.values
+        
+        except:
+            self.load_data()
+            return self.paper_df.values
 
 
     @logging_time
@@ -55,9 +64,6 @@ class Preprocess:
         5. BUILD WORD MAPPER
         6. TOKENIZE (WORD2IDX)
         '''
-        
-        if path is None:
-            path = os.path.join(self.cfg.DATA_DIR, self.cfg.file_name)
 
         # 0. LOAD DATAFRAME
         df = self.load_data(path)
@@ -79,7 +85,7 @@ class Preprocess:
         if not return_y:
             return X
         else:
-            return X, self.get_label
+            return X, self.label
 
 
     @logging_time
@@ -240,10 +246,28 @@ class Preprocess:
 
         np.save(os.path.join(self.cfg.DATA_DIR, 'X_tokenized.npy'), X)
 
-    
+
+    def save_word_mapper(self, fname=None):
+
+        if fname is None:
+            fname = 'word_mapper.yml'
+
+        with open(os.path.join(self.cfg.DATA_DIR, fname), 'w') as y:
+            yaml.dump(self.word_mapper, y)
+
+
     def load_processed(self, fname=None):
 
         if fname is None:
             fname = 'X_tokenized.npy'
 
         return np.load(os.path.join(self.cfg.DATA_DIR, fname))
+
+    def load_word_mapper(self, fname=None):
+
+        if fname is None:
+            fname = 'word_mapper.yml'
+        
+        with open(os.path.join(self.cfg.DATA_DIR, fname), 'r') as y:
+            self.word_mapper = yaml.load(y, Loader=yaml.FullLoader)
+            return self.word_mapper

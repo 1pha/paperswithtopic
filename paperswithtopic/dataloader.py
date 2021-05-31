@@ -27,7 +27,7 @@ class PaperDataset(Dataset):
 
     def __getitem__(self, idx):
 
-        paper, label = torch.tensor(self.data[idx]), torch.tensor(self.label[idx])
+        paper, label = torch.tensor(self.data[idx], type=torch.long), torch.tensor(self.label[idx], type=torch.long)
 
         if not self.pad:
             return paper, label
@@ -38,4 +38,13 @@ class PaperDataset(Dataset):
 
         return paper, label, mask
 
+    def __len__(self):
+        return len(self.data)
+
     
+def get_dataloader(cfg, X, y, **kwargs):
+
+    dataset = PaperDataset(cfg, X, y)
+    dataloader = DataLoader(dataset, cfg.batch_size, pin_memory=True, **kwargs)
+
+    return dataloader
