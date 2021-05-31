@@ -11,9 +11,8 @@ embed_dim: 128 # for word2vec
 
 
 # DATALOADER
-test: False
 test_size: .2
-batch_size: 16
+batch_size: 32
 
 
 # MODEL CONFIG
@@ -23,6 +22,12 @@ hidden_dim: 128 # for models
 n_layers: 1
 n_heads: 8
 
+
+# TRAIN
+optimizer: adam
+learning_rate: .001
+weight_decay: .001
+loss: mlml # Multi Label Margin Loss
 
 # MISC
 seed: 42

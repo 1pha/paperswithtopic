@@ -6,10 +6,11 @@ from torch.utils.data import Dataset, DataLoader
 
 class PaperDataset(Dataset):
 
-    def __init__(self, cfg, X=None, y=None):
+    def __init__(self, cfg, X=None, y=None, test=False):
 
         # SETUP
         self.cfg = cfg
+        self.test = test
         self.pad = cfg.PAD
         self.seq_len = cfg.MAX_LEN
         SEED = cfg.seed
@@ -18,7 +19,7 @@ class PaperDataset(Dataset):
             
         # DATA
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=cfg.test_size, random_state=SEED)
-        if not cfg.test:
+        if not self.test:
             self.data, self.label = X_train, y_train
              
         else:
@@ -42,9 +43,9 @@ class PaperDataset(Dataset):
         return len(self.data)
 
     
-def get_dataloader(cfg, X, y, **kwargs):
+def get_dataloader(cfg, X, y, test, **kwargs):
 
-    dataset = PaperDataset(cfg, X, y)
+    dataset = PaperDataset(cfg, X, y, test)
     dataloader = DataLoader(dataset, cfg.batch_size, pin_memory=True, **kwargs)
 
     return dataloader

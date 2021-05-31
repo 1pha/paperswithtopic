@@ -14,7 +14,8 @@ def load_model(cfg):
         'lstmattn': LSTMATTN,
         'bert': BERT,
         'bertclassification': BERTClassification,
-    }
+    }[cfg.model_name](cfg)
+
 
 class NaiveBayes:
 
@@ -41,7 +42,11 @@ class SequenceModel(nn.Module):
         self.sfx = nn.Softmax(dim=1)
 
 
-    def forward(self, x):
+    def forward(self, x, mask, *args):
+
+        '''
+        x means mask
+        '''
 
         if not self.cfg.pre_embed:
             x = self.embed_layer(x)
@@ -86,7 +91,7 @@ class BERTClassification(SequenceModel):
         self.encoder = BertForSequenceClassification(self.config)
 
 
-    def forward(self, x):
+    def forward(self, x, mask, *args):
 
         '''
         OVERRIDE
@@ -94,7 +99,7 @@ class BERTClassification(SequenceModel):
 
         if not self.cfg.pre_embed:
             x = self.embed_layer(x)
-            x = self.encoder(inputs_embeds=x)
+            x = self.encoder(inputs_embeds=x, attention_mask=mask)
             x = x['logits']
             x = self.sfx(x)
 
@@ -113,7 +118,7 @@ class RNN(SequenceModel):
             batch_first=True
         )
 
-    def forward(self, x):
+    def forward(self, x, mask, *args):
 
         pass
     
