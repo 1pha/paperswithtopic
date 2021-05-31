@@ -6,3 +6,16 @@ file_name: paperswithtopic.csv
 # PREPROCESS
 MAX_LEN: 64
 PAD: True
+embed_dim: 128 # for word2vec
+
+
+# DATALOADER
+test_size: .2
+
+
+# MODEL
+hidden_dim: 128 # for models
+
+
+# MISC
+seed: 42

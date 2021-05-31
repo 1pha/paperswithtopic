@@ -27,6 +27,7 @@ class Preprocess:
 
         self.cfg = cfg
 
+
     @logging_time
     def load_data(self, path):
 
@@ -38,9 +39,13 @@ class Preprocess:
 
         return df
 
+    @property
+    def get_label(self):
+        return self.paper_df.values
+
 
     @logging_time
-    def pp_pipeline(self, path=None):
+    def pp_pipeline(self, path=None, return_y=True):
 
         '''
         1. LOAD RAW PAPERS
@@ -71,7 +76,10 @@ class Preprocess:
         self.build_word_mapper(X)
         X = self.tokenize_papers(X, self.cfg.PAD)
 
-        return X
+        if not return_y:
+            return X
+        else:
+            return X, self.get_label
 
 
     @logging_time
@@ -85,7 +93,6 @@ class Preprocess:
         print(f'There are {len(self.X_raw)} papers.')
     
         return self.X_raw
-
 
 
     @logging_time
@@ -187,6 +194,12 @@ class Preprocess:
     @logging_time
     def tokenize_papers(self, X=None, pad=True, word_mapper=None):
 
+        '''
+        This will map word > index
+        If pad is True, it will make every sequence to maximum sequence,
+        so shorter sequences would have 0-pads in the back (post-padding).
+        '''
+
         if X is None:
             X = self.X_filter
 
@@ -209,12 +222,28 @@ class Preprocess:
 
 
     @logging_time
-    def fasttext_train(self, X=None, **kwargs):
+    def fasttext_train(self, X=None, embed_dim=None, **kwargs):
 
         if X is None:
             X = self.X_tokenized
 
+        if embed_dim is None:
+            embed_dim = self.cfg.embed_dim
+
         X_fasttext = list(map(str.split, X))
-        model = FastText(sentences=X_fasttext, **kwargs)
+        model = FastText(sentences=X_fasttext, vector_size=embed_dim, **kwargs)
 
         return model
+
+    
+    def save_data(self, X):
+
+        np.save(os.path.join(self.cfg.DATA_DIR, 'X_tokenized.npy'), X)
+
+    
+    def load_processed(self, fname=None):
+
+        if fname is None:
+            fname = 'X_tokenized.npy'
+
+        return np.load(os.path.join(self.cfg.DATA_DIR, fname))
