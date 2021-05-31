@@ -1,0 +1,8 @@
+# ROOT DIRECTORIES
+DATA_DIR: ./data/
+file_name: paperswithtopic.csv
+
+
+# PREPROCESS
+MAX_LEN: 64
+PAD: True

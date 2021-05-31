@@ -1,3 +1,5 @@
+X_tokenized.npy
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
