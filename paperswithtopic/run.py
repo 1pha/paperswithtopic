@@ -6,7 +6,7 @@ from .preprocess import Preprocess
 from .dataloader import get_dataloader
 from .optimizer import get_optimizer, get_scheduler
 from .model import load_model
-from .metrics import get_loss, get_metric
+from .metrics import get_loss, get_auc
 
 
 def data_setup(cfg):
@@ -31,6 +31,7 @@ def data_setup(cfg):
 def run(cfg):
 
     train_dataloader, valid_dataloader = data_setup(cfg)
+    print(f'NUM TRAIN {len(train_dataloader.dataset)} | NUM VALID {len(valid_dataloader.dataset)}')
 
     model = load_model(cfg)
     optimizer = get_optimizer(model, cfg)
@@ -40,8 +41,11 @@ def run(cfg):
     early_stopping_counter = 0
     for epoch in range(cfg.start_epoch, cfg.n_epochs):
 
-        trn_auc, trn_acc, trn_loss = train(train_dataloader, model, optimizer, cfg)
-        val_auc, val_acc, val_loss = valid(valid_dataloader, model, cfg)
+        trn_auc, trn_loss = train(train_dataloader, model, optimizer, cfg)
+        val_auc, val_loss = valid(valid_dataloader, model, cfg)
+
+        print(f'TRAIN:: AUC {trn_auc} | LOSS {trn_loss}')
+        print(f'VALID:: AUC {val_auc} | LOSS {val_loss}')
 
         # wandb.log({"epoch": epoch, "train_loss": train_loss, "train_auc": train_auc, "train_acc":train_acc,
         #     "valid_auc":auc, "valid_acc":acc})
@@ -61,6 +65,8 @@ def run(cfg):
         else:
             scheduler.step()
 
+    return model
+
     
 def train(dataloader, model, optimizer, cfg):
 
@@ -74,29 +80,48 @@ def train(dataloader, model, optimizer, cfg):
         preds = model(paper, mask)
 
         optimizer.zero_grad()
-        loss = get_loss(preds, label, cfg.loss)
+        loss = torch.sum(get_loss(preds, label, cfg.loss))
         loss.backward()
+        losses.append(loss)
         optimizer.step()
 
         preds = preds.to('cpu').detach().numpy()
-        targets = targets.to('cpu').detach().numpy()
-    
-        total_preds.append(preds)
-        losses.append(loss)
+        total_preds.append(preds)        
       
     total_preds = np.concatenate(total_preds)
-
-    # Train AUC / ACC
     total_targets = dataloader.dataset.label
-    auc = get_metric(total_targets, total_preds)
-    loss_avg = sum(losses)/len(losses)
-    print(f'TRAIN AUC : {auc}')
+
+    auc = get_auc(total_targets, total_preds)
+    loss_avg = sum(losses) / len(losses)
+
     return auc, loss_avg
 
 
 def valid(dataloader, model, cfg):
 
-    pass
+    model.eval()
+
+    total_preds = []
+    losses = []
+    for step, batch in enumerate(dataloader):
+
+        paper, label, mask = batch
+        preds = model(paper, mask)
+
+        loss = torch.sum(get_loss(preds, label, cfg.loss))
+
+        preds = preds.to('cpu').detach().numpy()
+    
+        total_preds.append(preds)
+        losses.append(loss)
+      
+    total_preds = np.concatenate(total_preds)
+    total_targets = dataloader.dataset.label
+
+    auc = get_auc(total_targets, total_preds)
+    loss_avg = sum(losses) / len(losses)
+
+    return auc, loss_avg
 
 
 def save_checkpoint(state, model_dir, model_filename):

@@ -16,6 +16,8 @@ batch_size: 32
 
 
 # MODEL CONFIG
+model_name: 'bertclassification'
+
 num_class: 16
 vocab_size: 30471 # as default
 hidden_dim: 128 # for models
@@ -25,10 +27,19 @@ n_heads: 8
 
 # TRAIN
 optimizer: adam
+scheduler: plateau
 learning_rate: .001
 weight_decay: .001
 loss: mlml # Multi Label Margin Loss
+start_epoch: 0
+n_epochs: 3
+
 
 # MISC
 seed: 42
 use_saved: True
+return_everything: False
+
+
+# DEBUG
+partial: 0.1

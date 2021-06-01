@@ -16,6 +16,9 @@ class PaperDataset(Dataset):
         SEED = cfg.seed
         if X is None or y is None:
             print(f'Please feed data.')
+
+        if cfg.partial:
+            X, y = X[:int(len(X) * cfg.partial)], y[:int(len(X) * cfg.partial)]
             
         # DATA
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=cfg.test_size, random_state=SEED)
@@ -28,7 +31,7 @@ class PaperDataset(Dataset):
 
     def __getitem__(self, idx):
 
-        paper, label = torch.tensor(self.data[idx], type=torch.long), torch.tensor(self.label[idx], type=torch.long)
+        paper, label = torch.tensor(self.data[idx], dtype=torch.long), torch.tensor(self.label[idx], dtype=torch.long)
 
         if not self.pad:
             return paper, label
