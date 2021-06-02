@@ -10,7 +10,7 @@ from .model import load_model
 from .metrics import get_loss, get_auc
 
 
-def data_setup(cfg):
+def setup(cfg):
 
     preprocess = Preprocess(cfg=cfg)
     if cfg.use_saved:
@@ -31,10 +31,10 @@ def data_setup(cfg):
 
 def run(cfg):
 
-    train_dataloader, valid_dataloader = data_setup(cfg)
+    train_dataloader, valid_dataloader = setup(cfg)
     print(f'NUM TRAIN {len(train_dataloader.dataset)} | NUM VALID {len(valid_dataloader.dataset)}')
 
-    model = load_model(cfg)
+    model, cfg.device = load_model(cfg)
     optimizer = get_optimizer(model, cfg)
     scheduler = get_scheduler(optimizer, cfg)
 
@@ -43,8 +43,8 @@ def run(cfg):
     for epoch in range(cfg.start_epoch, cfg.n_epochs):
 
         print(f'Epoch {epoch + 1} / {cfg.epochs}, BEST MAE {best_auc:.3f}')
-        trn_auc, trn_loss = train(train_dataloader, model, optimizer, cfg)
-        val_auc, val_loss = valid(valid_dataloader, model, cfg)
+        trn_auc, trn_loss, trn_pred = train(train_dataloader, model, optimizer, cfg)
+        val_auc, val_loss, val_pred = valid(valid_dataloader, model, cfg)
         scheduler.step(best_auc)
 
         wandb.log({
@@ -75,15 +75,17 @@ def run(cfg):
     return model
 
     
-def train(dataloader, model, optimizer, cfg):
+def train(dataloader, model, optimizer, cfg, total_targets=None):
+
+    if total_targets is None:
+        total_targets = dataloader.dataset.label
 
     model.train()
-
     total_preds = []
     losses = []
     for step, batch in enumerate(dataloader):
 
-        paper, label, mask = batch
+        paper, label, mask = map(lambda x: x.to(cfg.device), batch)
         preds = model(paper, mask)
 
         optimizer.zero_grad()
@@ -101,34 +103,36 @@ def train(dataloader, model, optimizer, cfg):
     auc = get_auc(total_targets, total_preds)
     loss_avg = sum(losses) / len(losses)
 
-    return auc, loss_avg
+    return auc, loss_avg, (total_preds, total_targets)
 
 
-def valid(dataloader, model, cfg):
+def valid(dataloader, model, cfg, total_targets=None):
+
+    if total_targets is None:
+        total_targets = dataloader.dataset.label
 
     model.eval()
-
     total_preds = []
     losses = []
-    for step, batch in enumerate(dataloader):
+    with torch.no_grad():
+        for step, batch in enumerate(dataloader):
 
-        paper, label, mask = batch
-        preds = model(paper, mask)
+            paper, label, mask = map(lambda x: x.to(cfg.device), batch)
+            preds = model(paper, mask)
 
-        loss = torch.sum(get_loss(preds, label, cfg.loss))
+            loss = torch.sum(get_loss(preds, label, cfg.loss))
 
-        preds = preds.to('cpu').detach().numpy()
-    
-        total_preds.append(preds)
-        losses.append(loss)
+            preds = preds.to('cpu').detach().numpy()
+        
+            total_preds.append(preds)
+            losses.append(loss)
       
     total_preds = np.concatenate(total_preds)
-    total_targets = dataloader.dataset.label
 
     auc = get_auc(total_targets, total_preds)
     loss_avg = sum(losses) / len(losses)
 
-    return auc, loss_avg
+    return auc, loss_avg, total_preds
 
 
 def save_checkpoint(state, model_dir, model_filename):

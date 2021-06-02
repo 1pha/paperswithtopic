@@ -7,6 +7,7 @@ from transformers.models.bert.modeling_bert import BertModel, BertConfig, BertFo
 
 def load_model(cfg):
 
+    device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
     return {
         'rnn': RNN,
         'lstm': LSTM,
@@ -14,7 +15,7 @@ def load_model(cfg):
         'lstmattn': LSTMATTN,
         'bert': BERT,
         'bertclassification': BERTClassification,
-    }[cfg.model_name](cfg)
+    }[cfg.model_name](cfg).to(device), device
 
 
 class NaiveBayes:
@@ -100,7 +101,7 @@ class BERT(SequenceModel):
             x = self.encoder(inputs_embeds=x, attention_mask=mask)
 
         else: # given (batch_size, seq_len, hidden_dim)
-            
+
             x = self.encoder(input_ids=x, attention_mask=mask)
 
         '''
