@@ -33,6 +33,7 @@ weight_decay: .001
 loss: mlml # Multi Label Margin Loss
 start_epoch: 0
 n_epochs: 3
+early_patience: 20
 
 
 # MISC

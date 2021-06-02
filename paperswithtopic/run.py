@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import wandb
 
 import torch
 from .preprocess import Preprocess
@@ -41,29 +42,35 @@ def run(cfg):
     early_stopping_counter = 0
     for epoch in range(cfg.start_epoch, cfg.n_epochs):
 
+        print(f'Epoch {epoch + 1} / {cfg.epochs}, BEST MAE {best_auc:.3f}')
         trn_auc, trn_loss = train(train_dataloader, model, optimizer, cfg)
         val_auc, val_loss = valid(valid_dataloader, model, cfg)
+        scheduler.step(best_auc)
+
+        wandb.log({
+            'train_auc': trn_auc,
+            'valid_auc': val_auc,
+
+            'train_loss': trn_loss,
+            'valid_loss': val_loss,
+        })
 
         print(f'TRAIN:: AUC {trn_auc} | LOSS {trn_loss}')
         print(f'VALID:: AUC {val_auc} | LOSS {val_loss}')
 
-        # wandb.log({"epoch": epoch, "train_loss": train_loss, "train_auc": train_auc, "train_acc":train_acc,
-        #     "valid_auc":auc, "valid_acc":acc})
         if val_auc > best_auc:
             best_auc = val_auc
             early_stopping_counter = 0
 
         else:
             early_stopping_counter += 1
-            if early_stopping_counter >= cfg.patience:
-                print(f'EarlyStopping counter: {early_stopping_counter} out of {cfg.patience}')
+            if early_stopping_counter >= cfg.early_patience:
+                print(f'EarlyStopping counter: {early_stopping_counter} out of {cfg.early_patience}')
                 break
 
-        # scheduler
-        if cfg.scheduler == 'plateau':
-            scheduler.step(best_auc)
-        else:
-            scheduler.step()
+    cfg.best_auc = best_auc
+    wandb.config.update(cfg)
+    wandb.finish()
 
     return model
 
