@@ -29,10 +29,10 @@ n_heads: 8
 optimizer: adam
 scheduler: plateau
 learning_rate: .001
-weight_decay: .001
+weight_decay: .0
 loss: mlml # Multi Label Margin Loss
 start_epoch: 0
-n_epochs: 3
+n_epochs: 100
 early_patience: 20
 
 
@@ -43,4 +43,4 @@ return_everything: False
 
 
 # DEBUG
-partial: 0.1
+partial: 1

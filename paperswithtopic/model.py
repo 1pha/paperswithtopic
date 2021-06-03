@@ -8,6 +8,8 @@ from transformers.models.bert.modeling_bert import BertModel, BertConfig, BertFo
 def load_model(cfg):
 
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+    print(f'Use {device} as a device.')
+    print(f'Load {cfg.model_name.capitalize()} as model.')
     return {
         'rnn': RNN,
         'lstm': LSTM,

@@ -1,0 +1,114 @@
+wandb_version: 1
+
+DATA_DIR:
+  desc: null
+  value: ./data/
+MAX_LEN:
+  desc: null
+  value: 64
+PAD:
+  desc: null
+  value: true
+_wandb:
+  desc: null
+  value:
+    cli_version: 0.10.31
+    framework: huggingface
+    huggingface_version: 4.6.1
+    is_jupyter_run: true
+    is_kaggle_kernel: true
+    python_version: 3.7.10
+    t:
+      1:
+      - 1
+      - 5
+      - 11
+      2:
+      - 1
+      - 5
+      - 11
+      3:
+      - 2
+      4: 3.7.10
+      5: 0.10.31
+      6: 4.6.1
+      8:
+      - 1
+      - 2
+      - 3
+      - 5
+batch_size:
+  desc: null
+  value: 32
+best_auc:
+  desc: null
+  value: 0.538884740793235
+device:
+  desc: null
+  value: cuda:0
+early_patience:
+  desc: null
+  value: 20
+embed_dim:
+  desc: null
+  value: 128
+file_name:
+  desc: null
+  value: paperswithtopic.csv
+hidden_dim:
+  desc: null
+  value: 128
+learning_rate:
+  desc: null
+  value: 0.001
+loss:
+  desc: null
+  value: mlml
+model_name:
+  desc: null
+  value: bertclassification
+n_epochs:
+  desc: null
+  value: 3
+n_heads:
+  desc: null
+  value: 8
+n_layers:
+  desc: null
+  value: 1
+num_class:
+  desc: null
+  value: 16
+optimizer:
+  desc: null
+  value: adam
+partial:
+  desc: null
+  value: 0.1
+pre_embed:
+  desc: null
+  value: false
+return_everything:
+  desc: null
+  value: false
+scheduler:
+  desc: null
+  value: plateau
+seed:
+  desc: null
+  value: 42
+start_epoch:
+  desc: null
+  value: 0
+test_size:
+  desc: null
+  value: 0.2
+use_saved:
+  desc: null
+  value: true
+vocab_size:
+  desc: null
+  value: 30471
+weight_decay:
+  desc: null
+  value: 0.001

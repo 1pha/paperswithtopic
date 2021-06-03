@@ -1,0 +1,26 @@
+{
+    "os": "Windows-10-10.0.18362-SP0",
+    "python": "3.7.10",
+    "heartbeatAt": "2021-06-03T09:11:27.167421",
+    "startedAt": "2021-06-03T09:11:24.137946",
+    "docker": null,
+    "gpu": "GeForce RTX 2060",
+    "gpu_count": 1,
+    "cpu_count": 12,
+    "cuda": null,
+    "args": [
+        "-f",
+        "C:\\Users\\pha\\AppData\\Roaming\\jupyter\\runtime\\kernel-ebae82ae-4ffa-45df-afb9-498bbd7747a7.json"
+    ],
+    "state": "running",
+    "program": "<python with no main file>",
+    "git": {
+        "remote": "https://github.com/1pha/paperswithtopic.git",
+        "commit": "147141e49bc0298e0ce8894f93583c21c384cf89"
+    },
+    "email": "1phantasmas@korea.ac.kr",
+    "root": "G:/\ub0b4 \ub4dc\ub77c\uc774\ube0c/projects/paperswithcode_nlp",
+    "host": "DESKTOP-5KE3TE3",
+    "username": "pha",
+    "executable": "C:\\Users\\pha\\anaconda3\\envs\\xai501\\python.exe"
+}

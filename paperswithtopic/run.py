@@ -42,7 +42,7 @@ def run(cfg):
     early_stopping_counter = 0
     for epoch in range(cfg.start_epoch, cfg.n_epochs):
 
-        print(f'Epoch {epoch + 1} / {cfg.epochs}, BEST MAE {best_auc:.3f}')
+        print(f'Epoch {epoch + 1} / {cfg.n_epochs}, BEST AUC {best_auc:.3f}')
         trn_auc, trn_loss, trn_pred = train(train_dataloader, model, optimizer, cfg)
         val_auc, val_loss, val_pred = valid(valid_dataloader, model, cfg)
         scheduler.step(best_auc)
@@ -55,8 +55,8 @@ def run(cfg):
             'valid_loss': val_loss,
         })
 
-        print(f'TRAIN:: AUC {trn_auc} | LOSS {trn_loss}')
-        print(f'VALID:: AUC {val_auc} | LOSS {val_loss}')
+        print(f'TRAIN:: AUC {trn_auc:.3f} | LOSS {trn_loss:.3f}')
+        print(f'VALID:: AUC {val_auc:.3f} | LOSS {val_loss:.3f}')
 
         if val_auc > best_auc:
             best_auc = val_auc
