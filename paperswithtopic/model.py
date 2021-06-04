@@ -16,8 +16,9 @@ def load_model(cfg):
         'gru': GRU,
         'lstmattn': LSTMATTN,
         'bert': BERT,
+        'pretrainedbert': PretrainedBERT,
         'bertclassification': BERTClassification,
-    }[cfg.model_name](cfg).to(device), device
+    }[cfg.model_name.lower()](cfg).to(device), device
 
 
 class NaiveBayes:
@@ -100,7 +101,7 @@ class BERT(SequenceModel):
 
         if not self.cfg.pre_embed: # given (batch_size, seq_len)
 
-            x = self.embed_layer(x)
+            # x = self.embed_layer(x)
             x = self.encoder(input_ids=x, attention_mask=mask)
 
         else: # given (batch_size, seq_len, hidden_dim)
@@ -108,8 +109,8 @@ class BERT(SequenceModel):
             x = self.encoder(inputs_embeds=x, attention_mask=mask)
 
         '''
-        TODO:: choose btw LAST_HIDDEN_STATES vs. POOLER_OUTPUT
-            - LAST_HIDDEN_STATES (batch_size, seq_len, hidden_dim)
+        TODO:: choose btw LAST_HIDDEN_STATE vs. POOLER_OUTPUT
+            - LAST_HIDDEN_STATE (batch_size, seq_len, hidden_dim)
             - POOLER_OUTPUT (batch_size, hidden_dim) - use only the 1st sequence
         '''
 
@@ -118,16 +119,24 @@ class BERT(SequenceModel):
             # (batch_size, hidden_size)
             x = x['pooler_output']
 
-        elif self.cfg.which_output == 'pooler_output':
+        elif self.cfg.which_output == 'last_hidden_state':
 
             # (batch_size, hidden_size)
-            x = x['last_hidden_states'][:, -1, :]
-            
+            x = x['last_hidden_state'][:, -1, :]
+
         x = self.fc(x)
         x = self.relu(x)
         x = self.sfx(x)
 
         return x
+
+
+class PretrainedBERT(BERT):
+
+    def __init__(self, cfg):
+        super().__init__(cfg)
+
+        self.encoder = BertModel.from_pretrained('bert-base-uncased')
 
 
 class BERTClassification(SequenceModel):
@@ -157,8 +166,12 @@ class BERTClassification(SequenceModel):
 
         if not self.cfg.pre_embed: # given (batch_size, seq_len)
 
-            x = self.embed_layer(x)
-            x = self.encoder(input_ids=x, attention_mask=mask)
+            if not self.cfg.use_bert_embed: # USE TORCH EMBEDDING LAYER
+                x = self.embed_layer(x)
+                x = self.encoder(inputs_embeds=x, attention_mask=mask)
+
+            else:
+                x = self.encoder(input_ids=x, attention_mask=mask)
 
         else: # given (batch_size, seq_len, hidden_dim)
             

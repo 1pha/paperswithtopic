@@ -50,6 +50,9 @@ class PaperDataset(Dataset):
         if self.cfg.pre_embed:
             _paper = torch.sum(paper, axis=1)
 
+        else:
+            _paper = paper
+
         mask = torch.ones(self.seq_len)
         if sum(_paper != 0) < self.seq_len:
             mask[sum(_paper != 0):] = 0

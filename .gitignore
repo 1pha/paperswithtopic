@@ -1,5 +1,6 @@
 X_tokenized.npy
 wandb
+data/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

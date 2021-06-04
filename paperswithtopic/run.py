@@ -1,6 +1,5 @@
 import os
 import numpy as np
-from transformers.utils import logging
 import wandb
 
 import torch
@@ -12,15 +11,24 @@ from .metrics import get_loss, get_auc
 from .misc import logging_time
 
 
-def setup(cfg):
+def setup(cfg, debug=False):
+
+    if cfg.model_name == 'pretrainedbert':
+        cfg.embed_dim = 768
+        cfg.use_saved = True
+        cfg.pre_embed = False
 
     preprocess = Preprocess(cfg=cfg)
-    if cfg.use_saved:
-        X = preprocess.load_processed()
-        y = preprocess.label    
-        word_mapper = preprocess.load_word_mapper()
+    if cfg.use_saved and cfg.pre_embed:
+        print(f'Load Pre-embedded to {cfg.embed_dim}.')
+        X, y, word_mapper = preprocess.preembed_pipeline()
+
+    elif cfg.use_saved:
+        print(f'Load tokenized, without embeddings.')
+        X, y, word_mapper = preprocess.tokenized_pipeline()
         
     else:
+        print('Preprocess from zero-base.')
         X, y = preprocess.pp_pipeline()
         word_mapper = preprocess.word_mapper
         
@@ -28,10 +36,14 @@ def setup(cfg):
     train_dataloader = get_dataloader(cfg, X, y, test=False)
     valid_dataloader = get_dataloader(cfg, X, y, test=True)
 
-    return train_dataloader, valid_dataloader
+    if not debug:
+        return train_dataloader, valid_dataloader
+
+    else:
+        return X, y, train_dataloader, valid_dataloader
 
 
-def run(cfg):
+def run(cfg, debug=False):
 
     train_dataloader, valid_dataloader = setup(cfg)
     print(f'NUM TRAIN {len(train_dataloader.dataset)} | NUM VALID {len(valid_dataloader.dataset)}')
@@ -70,6 +82,9 @@ def run(cfg):
                 print(f'EarlyStopping counter: {early_stopping_counter} out of {cfg.early_patience}')
                 break
 
+        if debug:
+            return trn_pred, val_pred
+
     cfg.best_auc = best_auc
     wandb.config.update(cfg)
     wandb.finish()
@@ -92,16 +107,17 @@ def train(dataloader, model, optimizer, cfg, total_targets=None):
         preds = model(paper, mask)
 
         optimizer.zero_grad()
-        loss = torch.sum(get_loss(preds, label, cfg.loss))
+        loss = get_loss(preds, label, cfg.loss)
         loss.backward()
-        losses.append(loss)
         optimizer.step()
+        losses.append(loss)
+
+        torch.cuda.empty_cache()
 
         preds = preds.to('cpu').detach().numpy()
-        total_preds.append(preds)        
+        total_preds.append(preds) 
       
     total_preds = np.concatenate(total_preds)
-    total_targets = dataloader.dataset.label
 
     auc = get_auc(total_targets, total_preds)
     loss_avg = sum(losses) / len(losses)
@@ -124,7 +140,7 @@ def valid(dataloader, model, cfg, total_targets=None):
             paper, label, mask = map(lambda x: x.to(cfg.device), batch)
             preds = model(paper, mask)
 
-            loss = torch.sum(get_loss(preds, label, cfg.loss))
+            loss = get_loss(preds, label, cfg.loss)
 
             preds = preds.to('cpu').detach().numpy()
         
@@ -136,7 +152,7 @@ def valid(dataloader, model, cfg, total_targets=None):
     auc = get_auc(total_targets, total_preds)
     loss_avg = sum(losses) / len(losses)
 
-    return auc, loss_avg, total_preds
+    return auc, loss_avg, (total_preds, total_targets)
 
 
 def save_checkpoint(state, model_dir, model_filename):

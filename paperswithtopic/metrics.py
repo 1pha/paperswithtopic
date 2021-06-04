@@ -1,13 +1,22 @@
-from functools import partial
 from sklearn.metrics import roc_auc_score
+import torch
 import torch.nn as nn
 
 
 def get_loss(pred, target, name):
-    
-    return {
-        'mlml': nn.MultiLabelMarginLoss(reduction='none')
-    }[name](pred, target)
+
+    if name == 'mlml':
+        return nn.MultiLabelMarginLoss(reduction='sum')(pred, target)
+
+    if name == 'bce':
+
+        loss_fn = nn.BCELoss()
+        loss = torch.tensor(0, device=pred.device)
+        for i in range(pred.size()[1]):
+
+            loss += loss_fn(pred[:, i].float(), target[:, i].float())
+
+        return loss
 
 
 def get_auc(target, pred):

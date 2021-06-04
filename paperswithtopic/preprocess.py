@@ -33,6 +33,7 @@ class Preprocess:
 
         return df
 
+
     @property
     def label(self):
         try: 
@@ -80,7 +81,30 @@ class Preprocess:
         if not return_y:
             return X
         else:
-            return X, self.label
+            y = self.drop_columns(columns=self.cfg.drop)
+            return X, y
+
+
+    @logging_time
+    def tokenized_pipeline(self):
+
+        fname = f'X_tokenized.npy'
+        X = self.load_tokenized(fname)
+        y = self.drop_columns(columns=self.cfg.drop)
+
+        word_mapper = self.load_word_mapper()
+        return X, y, word_mapper
+
+
+    @logging_time
+    def preembed_pipeline(self):
+
+        fname = f'X_embed{self.cfg.embed_dim}.npy'
+        X = self.load_embedded(fname)
+        y = self.drop_columns(columns=self.cfg.drop)
+
+        word_mapper = self.load_word_mapper()
+        return X, y, word_mapper
 
 
     @logging_time
@@ -265,6 +289,23 @@ class Preprocess:
 
         return np.array(X_embed)
 
+
+    def drop_columns(self, columns=None):
+
+        if columns is not None:
+            
+            with open('./data/column2idx.yml', 'r') as f:
+                column2idx = yaml.load(f, Loader=yaml.FullLoader)
+
+            unused_columns = [column2idx[c] for c in columns]
+            used_columns = [i for i in range(16) if i not in unused_columns]  
+            self.cfg.num_class = len(used_columns)
+
+            return self.label[:, used_columns]
+
+        else: 
+            return self.label
+
     
     def save_data(self, X):
 
@@ -286,12 +327,21 @@ class Preprocess:
             model = self.fasttext
 
 
-    def load_processed(self, fname=None):
+    def load_tokenized(self, fname=None):
 
         if fname is None:
             fname = 'X_tokenized.npy'
 
         return np.load(os.path.join(self.cfg.DATA_DIR, fname))
+
+
+    def load_embedded(self, fname=None):
+
+        if fname is None:
+            fname = f'X_embed{self.cfg.embed_dim}.npy'
+
+        return np.load(os.path.join(self.cfg.DATA_DIR, fname))
+
 
     def load_word_mapper(self, fname=None):
 
@@ -303,3 +353,10 @@ class Preprocess:
             return self.word_mapper
 
     
+    def load_fasttext(self, fname=None):
+
+        if fname is None:
+            fname = f'fasttext{self.cfg.embed_dim}.model'
+
+        self.fasttext = FastText.load(os.path.join(self.cfg.data_dir, fname))
+        return self.fasttext

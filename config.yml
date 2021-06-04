@@ -7,8 +7,9 @@ file_name: paperswithtopic.csv
 MAX_LEN: 64
 PAD: True
 pre_embed: False
-embed_dim: 128 # for word2vec
-
+embed_dim: 128
+drop:
+  - methodology
 
 # DATALOADER
 test_size: .1
@@ -25,17 +26,18 @@ n_layers: 6
 n_heads: 8
 
 ## BERT
-which_output: last_hidden_states
+which_output: last_hidden_state
+use_bert_embed: False
 
 # TRAIN
 optimizer: adam
 scheduler: plateau
 learning_rate: .001
 weight_decay: .0
-loss: mlml # Multi Label Margin Loss
+loss: bce # Multi Label Margin Loss
 start_epoch: 0
 n_epochs: 100
-early_patience: 20
+early_patience: 30
 
 
 # MISC

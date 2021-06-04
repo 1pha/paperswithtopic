@@ -29,10 +29,13 @@ def seed_everything(seed=42):
 def logging_time(original_fn):
 
     def wrapper_fn(*args, **kwargs):
+
         start_time = time.time()
         result = original_fn(*args, **kwargs)
-        end_time = time.time()
-        print(f"[{original_fn.__name__}] {end_time-start_time:.1f} sec ")
+        fn_name = original_fn.__name__
+        end = '' if fn_name == 'train' else '\n'
+        print(f"[{fn_name}] {time.time() - start_time:.1f} sec ", end=end)
+        
         return result
 
     return wrapper_fn
