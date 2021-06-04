@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from transformers.utils import logging
 import wandb
 
 import torch
@@ -8,6 +9,7 @@ from .dataloader import get_dataloader
 from .optimizer import get_optimizer, get_scheduler
 from .model import load_model
 from .metrics import get_loss, get_auc
+from .misc import logging_time
 
 
 def setup(cfg):
@@ -74,7 +76,8 @@ def run(cfg):
 
     return model
 
-    
+
+@logging_time
 def train(dataloader, model, optimizer, cfg, total_targets=None):
 
     if total_targets is None:
@@ -106,6 +109,7 @@ def train(dataloader, model, optimizer, cfg, total_targets=None):
     return auc, loss_avg, (total_preds, total_targets)
 
 
+@logging_time
 def valid(dataloader, model, cfg, total_targets=None):
 
     if total_targets is None:

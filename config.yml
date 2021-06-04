@@ -11,19 +11,21 @@ embed_dim: 128 # for word2vec
 
 
 # DATALOADER
-test_size: .2
-batch_size: 32
+test_size: .1
+batch_size: 128
 
 
 # MODEL CONFIG
-model_name: 'bertclassification'
+model_name: bertclassification
 
 num_class: 16
 vocab_size: 30471 # as default
 hidden_dim: 128 # for models
-n_layers: 1
+n_layers: 6
 n_heads: 8
 
+## BERT
+which_output: last_hidden_states
 
 # TRAIN
 optimizer: adam

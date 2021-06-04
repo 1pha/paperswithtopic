@@ -1,3 +1,4 @@
+import numpy as np
 from sklearn.model_selection import train_test_split
 
 import torch
@@ -36,14 +37,23 @@ class PaperDataset(Dataset):
         if not self.pad:
             return paper, label
 
-        mask = torch.ones(self.seq_len)
-        if sum(paper != 0) < self.seq_len:
-            mask[sum(paper != 0):] = 0
+        mask = self.build_mask(paper)
 
         return paper, label, mask
 
     def __len__(self):
         return len(self.data)
+
+
+    def build_mask(self, paper):
+
+        if self.cfg.pre_embed:
+            _paper = torch.sum(paper, axis=1)
+
+        mask = torch.ones(self.seq_len)
+        if sum(_paper != 0) < self.seq_len:
+            mask[sum(_paper != 0):] = 0
+        return mask        
 
     
 def get_dataloader(cfg, X, y, test, **kwargs):

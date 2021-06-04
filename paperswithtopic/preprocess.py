@@ -5,18 +5,8 @@ import numpy as np
 import pandas as pd
 from gensim.models import FastText
 
-from .config import load_config, edict2dict
-
-def logging_time(original_fn):
-
-    def wrapper_fn(*args, **kwargs):
-        start_time = time.time()
-        result = original_fn(*args, **kwargs)
-        end_time = time.time()
-        print(f"[{original_fn.__name__}] {end_time-start_time:.1f} sec ")
-        return result
-
-    return wrapper_fn
+from .config import load_config
+from .misc import logging_time
 
 
 class Preprocess:
@@ -81,6 +71,11 @@ class Preprocess:
         X = self.remove_unknown(X)
         self.build_word_mapper(X)
         X = self.tokenize_papers(X, self.cfg.PAD)
+
+        # +. EMBED PAPERS
+        if self.cfg.pre_embed:
+            self.fasttext = self.train_fasttext(X=self.X_raw, embed_dim=self.cfg.embed_dim, window=self.cfg.MAX_LEN)
+            X = self.embed_paper(X)
 
         if not return_y:
             return X
@@ -228,10 +223,10 @@ class Preprocess:
 
 
     @logging_time
-    def fasttext_train(self, X=None, embed_dim=None, **kwargs):
+    def train_fasttext(self, X=None, embed_dim=None, **kwargs):
 
         if X is None:
-            X = self.X_tokenized
+            X = self.X_raw
 
         if embed_dim is None:
             embed_dim = self.cfg.embed_dim
@@ -240,6 +235,35 @@ class Preprocess:
         model = FastText(sentences=X_fasttext, vector_size=embed_dim, **kwargs)
 
         return model
+
+
+    @logging_time
+    def embed_paper(self, X=None, model=None, **kwargs):
+
+        if X is None:
+            X = self.X_tokenized
+
+        if model is None:
+            model = self.fasttext
+
+        embed_dim = model.wv.vectors.shape[1]
+        word_mapper = self.word_mapper
+        def embed(word): # EMBED A SINGLE WORD TO EMBEDDED VECTOR
+
+            if isinstance(word, int): # IF INDEX IS GIVEN, CONVERT TO WORD
+                word = word_mapper[word]
+            
+            if word == '<pad>': # IF PAD, JUST RETURN 0 VECTOR
+                return np.zeros((1, embed_dim))
+            
+            else: # USE MODEL TO GET EMBED VECTORS
+                return model.wv.get_vector(word).reshape(1, -1)
+        
+        X_embed = [0 for _ in X]
+        for i, paper in enumerate(X):
+            X_embed[i] = np.concatenate(list(map(embed, paper)))
+
+        return np.array(X_embed)
 
     
     def save_data(self, X):
@@ -254,6 +278,12 @@ class Preprocess:
 
         with open(os.path.join(self.cfg.DATA_DIR, fname), 'w') as y:
             yaml.dump(self.word_mapper, y)
+
+
+    def save_fasttext(self, model=None):
+
+        if model is None:
+            model = self.fasttext
 
 
     def load_processed(self, fname=None):
@@ -271,3 +301,5 @@ class Preprocess:
         with open(os.path.join(self.cfg.DATA_DIR, fname), 'r') as y:
             self.word_mapper = yaml.load(y, Loader=yaml.FullLoader)
             return self.word_mapper
+
+    

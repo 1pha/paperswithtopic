@@ -36,6 +36,7 @@ class SequenceModel(nn.Module):
         self.vocab_size = cfg.vocab_size
         self.hidden_dim = cfg.hidden_dim
         self.num_class  = cfg.num_class
+        self.n_layers   = cfg.n_layers
 
         if not self.cfg.pre_embed:
             self.embed_layer = nn.Embedding(self.vocab_size, self.hidden_dim)
@@ -100,11 +101,11 @@ class BERT(SequenceModel):
         if not self.cfg.pre_embed: # given (batch_size, seq_len)
 
             x = self.embed_layer(x)
-            x = self.encoder(inputs_embeds=x, attention_mask=mask)
+            x = self.encoder(input_ids=x, attention_mask=mask)
 
         else: # given (batch_size, seq_len, hidden_dim)
 
-            x = self.encoder(input_ids=x, attention_mask=mask)
+            x = self.encoder(inputs_embeds=x, attention_mask=mask)
 
         '''
         TODO:: choose btw LAST_HIDDEN_STATES vs. POOLER_OUTPUT
@@ -112,7 +113,16 @@ class BERT(SequenceModel):
             - POOLER_OUTPUT (batch_size, hidden_dim) - use only the 1st sequence
         '''
 
-        x = x['pooler_output'] # (batch_size, hidden_size)
+        if self.cfg.which_output == 'pooler_output':
+            
+            # (batch_size, hidden_size)
+            x = x['pooler_output']
+
+        elif self.cfg.which_output == 'pooler_output':
+
+            # (batch_size, hidden_size)
+            x = x['last_hidden_states'][:, -1, :]
+            
         x = self.fc(x)
         x = self.relu(x)
         x = self.sfx(x)
@@ -148,11 +158,11 @@ class BERTClassification(SequenceModel):
         if not self.cfg.pre_embed: # given (batch_size, seq_len)
 
             x = self.embed_layer(x)
-            x = self.encoder(inputs_embeds=x, attention_mask=mask)
+            x = self.encoder(input_ids=x, attention_mask=mask)
 
         else: # given (batch_size, seq_len, hidden_dim)
             
-            x = self.encoder(input_ids=x, attention_mask=mask)
+            x = self.encoder(inputs_embeds=x, attention_mask=mask)
         
         x = x['logits']
         x = self.sfx(x)
@@ -163,7 +173,7 @@ class BERTClassification(SequenceModel):
 class RNN(SequenceModel):
 
     def __init__(self, cfg):
-        super().__init__(self, cfg)
+        super().__init__(cfg)
 
         self.seq_model = nn.RNN(
             input_size =self.hidden_dim,
@@ -172,9 +182,19 @@ class RNN(SequenceModel):
             batch_first=True
         )
 
-    def _forward(self, x, mask):
+    def forward(self, x, mask):
 
-        return self.seq_model(x)
+        if not self.cfg.pre_embed:
+            x = self.embed_layer(x)
+
+        x , _= self.seq_model(x)
+
+        x = self.fc(x)
+        x = self.relu(x)
+        x = self.sfx(x)
+
+        return x[:, -1, :]
+        
 
 class LSTM(RNN):
 
