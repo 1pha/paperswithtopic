@@ -23,18 +23,18 @@ def setup(cfg, debug=False):
     preprocess = Preprocess(cfg=cfg)
     if cfg.use_saved and cfg.pre_embed:
         print(f'Load Pre-embedded to {cfg.embed_dim}.')
-        X, y, word_mapper = preprocess.preembed_pipeline()
+        X, y, idx2word = preprocess.preembed_pipeline()
 
     elif cfg.use_saved:
         print(f'Load tokenized, without embeddings.')
-        X, y, word_mapper = preprocess.tokenized_pipeline()
+        X, y, idx2word = preprocess.tokenized_pipeline()
         
     else:
         print('Preprocess from zero-base.')
         X, y = preprocess.pp_pipeline()
-        word_mapper = preprocess.word_mapper
+        idx2word = preprocess.idx2word
         
-    cfg.vocab_size = len(word_mapper)
+    cfg.vocab_size = len(idx2word)
     train_dataloader = get_dataloader(cfg, X, y, test=False)
     valid_dataloader = get_dataloader(cfg, X, y, test=True)
 

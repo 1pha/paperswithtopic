@@ -5,9 +5,9 @@ from torchsummary import summary
 
 from transformers.models.bert.modeling_bert import (
     BertModel, BertConfig, BertForSequenceClassification,
-    AlbertModel, AlbertConfig,
-    XLMModel, XLMConfig,
-    ElectraModel, ElectraConfig,
+    AlbertModel, AlbertConfig, AlbertForSequenceClassification,
+    ElectraModel, ElectraConfig, ElectraForSequenceClassification,
+    XLMModel, XLMConfig, XLMForSequenceClassification,
 )
 
 def load_model(cfg):
@@ -22,10 +22,13 @@ def load_model(cfg):
         'lstmattn': LSTMATTN,
         'bert': BERT,
         'albert': ALBERT,
-        'xlm': XLM,
         'electra': ELECTRA,
+        'xlm': XLM,
         'pretrainedbert': PretrainedBERT,
         'bertclassification': BERTClassification,
+        'albertclassification': ALBERTClassification,
+        'electraclassification': ELECTRAClassification,
+        'xlmclassification': XLMClassification,
     }[cfg.model_name.lower()](cfg).to(device), device
 
 
@@ -151,6 +154,72 @@ class PretrainedBERT(BERT):
         self.encoder = BertModel.from_pretrained('bert-base-uncased')
 
 
+class ALBERT(BERT):
+
+    '''
+    ALBERT OUTPUTS
+        - last_hidden_state (batch_size, seq_len, hidden_dim)
+        - pooler_output (batch_size, hidden_size)
+    '''
+
+    def __init__(self, cfg):
+        super().__init__(cfg)
+
+        self.config = AlbertConfig( 
+            vocab_size=self.cfg.vocab_size,
+            hidden_size=self.cfg.hidden_dim,
+            num_hidden_layers=self.cfg.n_layers,
+            num_attention_heads=self.cfg.n_heads,
+            max_position_embeddings=self.cfg.MAX_LEN,
+            num_labels=self.num_class,       
+        )
+        self.encoder = AlbertModel(self.config)
+
+
+class ELECTRA(BERT):
+
+    '''
+    ELECTRA OUTPUTS
+        - last_hidden_state (batch_size, seq_len, hidden_dim)
+        - NO POOLER OUTPUT
+    '''
+
+    def __init__(self, cfg):
+        super().__init__(cfg)
+
+        self.config = ElectraConfig( 
+            vocab_size=self.cfg.vocab_size,
+            hidden_size=self.cfg.hidden_dim,
+            num_hidden_layers=self.cfg.n_layers,
+            num_attention_heads=self.cfg.n_heads,
+            max_position_embeddings=self.cfg.MAX_LEN,
+            num_labels=self.num_class,       
+        )
+        self.encoder = ElectraModel(self.config)
+
+
+class XLM(BERT):
+
+    '''
+    XLM OUTPUTS
+        - last_hidden_state (batch_size, seq_len, hidden_dim)
+        - NO POOLER OUTPUT
+    '''
+
+    def __init__(self, cfg):
+        super().__init__(cfg)
+
+        self.config = XLMConfig( 
+            vocab_size=self.cfg.vocab_size,
+            hidden_size=self.cfg.hidden_dim,
+            num_hidden_layers=self.cfg.n_layers,
+            num_attention_heads=self.cfg.n_heads,
+            max_position_embeddings=self.cfg.MAX_LEN,
+            num_labels=self.num_class,       
+        )
+        self.encoder = XLMModel(self.config)
+        
+
 class BERTClassification(SequenceModel):
 
     def __init__(self, cfg):
@@ -164,7 +233,6 @@ class BERTClassification(SequenceModel):
             max_position_embeddings=self.cfg.MAX_LEN,
             num_labels=self.num_class,       
         )
-        # self.encoder = BertModel(self.config)  
         self.encoder = BertForSequenceClassification(self.config)
 
 
@@ -195,13 +263,7 @@ class BERTClassification(SequenceModel):
         return x
 
 
-class ALBERT(BERT):
-
-    '''
-    ALBERT OUTPUTS
-        - last_hidden_state (batch_size, seq_len, hidden_dim)
-        - pooler_output (batch_size, hidden_size)
-    '''
+class ALBERTClassification(BERTClassification):
 
     def __init__(self, cfg):
         super().__init__(cfg)
@@ -214,38 +276,10 @@ class ALBERT(BERT):
             max_position_embeddings=self.cfg.MAX_LEN,
             num_labels=self.num_class,       
         )
-        self.encoder = AlbertModel(self.config)
+        self.encoder = AlbertForSequenceClassification(self.config)
 
 
-class XLM(BERT):
-
-    '''
-    XLM OUTPUTS
-        - last_hidden_state (batch_size, seq_len, hidden_dim)
-        - NO POOLER OUTPUT
-    '''
-
-    def __init__(self, cfg):
-        super().__init__(cfg)
-
-        self.config = XLMConfig( 
-            vocab_size=self.cfg.vocab_size,
-            hidden_size=self.cfg.hidden_dim,
-            num_hidden_layers=self.cfg.n_layers,
-            num_attention_heads=self.cfg.n_heads,
-            max_position_embeddings=self.cfg.MAX_LEN,
-            num_labels=self.num_class,       
-        )
-        self.encoder = XLMModel(self.config)
-        
-
-class ELECTRA(BERT):
-
-    '''
-    ELECTRA OUTPUTS
-        - last_hidden_state (batch_size, seq_len, hidden_dim)
-        - NO POOLER OUTPUT
-    '''
+class ELECTRAClassification(BERTClassification):
 
     def __init__(self, cfg):
         super().__init__(cfg)
@@ -258,7 +292,23 @@ class ELECTRA(BERT):
             max_position_embeddings=self.cfg.MAX_LEN,
             num_labels=self.num_class,       
         )
-        self.encoder = ElectraModel(self.config)
+        self.encoder = ElectraForSequenceClassification(self.config)
+
+
+class XLMClassification(BERTClassification):
+
+    def __init__(self, cfg):
+        super().__init__(cfg)
+
+        self.config = XLMConfig( 
+            vocab_size=self.cfg.vocab_size,
+            hidden_size=self.cfg.hidden_dim,
+            num_hidden_layers=self.cfg.n_layers,
+            num_attention_heads=self.cfg.n_heads,
+            max_position_embeddings=self.cfg.MAX_LEN,
+            num_labels=self.num_class,       
+        )
+        self.encoder = XLMForSequenceClassification(self.config)
     
 
 class RNN(SequenceModel):
