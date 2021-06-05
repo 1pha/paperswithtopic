@@ -8,15 +8,17 @@ def get_loss(pred, target, name):
     if name == 'mlml':
         return nn.MultiLabelMarginLoss(reduction='sum')(pred, target)
 
-    if name == 'bce':
+    elif name == 'bce':
 
         loss_fn = nn.BCELoss()
-        loss = torch.tensor(0, device=pred.device)
-        for i in range(pred.size()[1]):
+        loss = torch.tensor(0, device=pred.device).float()
+        pred, target = pred.float(), target.float()
+        num_col = pred.size()[1]
+        for i in range(num_col):
 
-            loss += loss_fn(pred[:, i].float(), target[:, i].float())
+            loss += loss_fn(pred[:, i], target[:, i])
 
-        return loss
+        return loss / num_col
 
 
 def get_auc(target, pred):

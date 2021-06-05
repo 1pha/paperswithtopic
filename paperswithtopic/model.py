@@ -133,6 +133,10 @@ class BERT(SequenceModel):
 
 class PretrainedBERT(BERT):
 
+    '''
+    DEPRECATED: LACK OF VRAMS... SO SAD 
+    '''
+
     def __init__(self, cfg):
         super().__init__(cfg)
 

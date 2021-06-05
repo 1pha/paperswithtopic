@@ -8,11 +8,12 @@ from .dataloader import get_dataloader
 from .optimizer import get_optimizer, get_scheduler
 from .model import load_model
 from .metrics import get_loss, get_auc
-from .misc import logging_time
+from .misc import logging_time, seed_everything
 
 
 def setup(cfg, debug=False):
-
+    
+    seed_everything(cfg.seed)
     if cfg.model_name == 'pretrainedbert':
         cfg.embed_dim = 768
         cfg.use_saved = True
