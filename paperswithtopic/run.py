@@ -3,6 +3,7 @@ import numpy as np
 import wandb
 
 import torch
+from .config import save_config
 from .preprocess import Preprocess
 from .dataloader import get_dataloader
 from .optimizer import get_optimizer, get_scheduler
@@ -73,6 +74,11 @@ def run(cfg, debug=False):
         print(f'TRAIN:: AUC {trn_auc:.3f} | LOSS {trn_loss:.3f}')
         print(f'VALID:: AUC {val_auc:.3f} | LOSS {val_loss:.3f}')
 
+        model_name = f'{cfg.model_name}_EP{epoch+1}_VALAUC{val_auc*100:.0f}.pth'
+
+        if cfg.save_period % (epoch + 1) == 0:
+            save_checkpoint(model.state_dict(), model_name, model_dir=cfg.PTH_DIR)
+
         if val_auc > best_auc:
             best_auc = val_auc
             early_stopping_counter = 0
@@ -87,6 +93,7 @@ def run(cfg, debug=False):
             return trn_pred, val_pred
 
     cfg.best_auc = best_auc
+    save_config(cfg, os.path.join(cfg.PTH_DIR, 'config.yml'))
     wandb.config.update(cfg)
     wandb.finish()
 
@@ -156,8 +163,9 @@ def valid(dataloader, model, cfg, total_targets=None):
     return auc, loss_avg, (total_preds, total_targets)
 
 
-def save_checkpoint(state, model_dir, model_filename):
+def save_checkpoint(state, model_filename, model_dir):
+
     print('saving model ...')
     if not os.path.exists(model_dir):
-        os.makedirs(model_dir)    
+        os.makedirs(model_dir)  
     torch.save(state, os.path.join(model_dir, model_filename))

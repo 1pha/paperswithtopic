@@ -1,5 +1,6 @@
 # ROOT DIRECTORIES
 DATA_DIR: ./data/
+PTH_DIR: ./models/
 file_name: paperswithtopic.csv
 
 

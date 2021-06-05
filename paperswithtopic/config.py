@@ -22,9 +22,6 @@ def save_config(cfg, path=CONFIG_FILE_PATH):
     if isinstance(cfg, easydict.EasyDict):
         cfg = edict2dict(cfg)
 
-    else:
-        pass
-
     with open(path, 'w') as y:
         yaml.dump(cfg, y)
 
