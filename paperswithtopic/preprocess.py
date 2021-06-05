@@ -73,7 +73,7 @@ class Preprocess:
         X = self.retrieve_raw_papers(df)
 
         X = self.remove_unknown(X)
-        self.build_word_mapper(X)
+        self.build_idx2word(X)
         X = self.tokenize_papers(X, self.cfg.PAD)
 
         # +. EMBED PAPERS
@@ -95,8 +95,8 @@ class Preprocess:
         X = self.load_tokenized(fname)
         y = self.drop_columns(columns=self.cfg.drop)
 
-        word_mapper = self.load_word_mapper()
-        return X, y, word_mapper
+        idx2word = self.load_idx2word()
+        return X, y, idx2word
 
 
     @logging_time
@@ -106,8 +106,8 @@ class Preprocess:
         X = self.load_embedded(fname)
         y = self.drop_columns(columns=self.cfg.drop)
 
-        word_mapper = self.load_word_mapper()
-        return X, y, word_mapper
+        idx2word = self.load_idx2word()
+        return X, y, idx2word
 
 
     @logging_time
@@ -135,22 +135,22 @@ class Preprocess:
 
 
     @logging_time
-    def build_word_mapper(self, X=None):
+    def build_idx2word(self, X=None):
 
         if X is None:
             X = self.X_filter
 
-        self.word_mapper = {0: self._pad, 1: self._unk}
+        self.idx2word = {0: self._pad, 1: self._unk}
         def _encode(paper, idx):
             is_valid = lambda l: l.isalnum() or l == ' '
             
-            for word in list(filter(lambda x: x, paper.split(' '))):
+            for word in list(filter(lambda x: x, paper.lower().split(' '))):
                 
-                if word in self.word_mapper.values():
+                if word in self.idx2word.values():
                     pass
                 
                 elif all(filter(is_valid, word)):
-                    self.word_mapper[idx] = word
+                    self.idx2word[idx] = word
                     idx += 1
                     
             return idx
@@ -159,11 +159,11 @@ class Preprocess:
         for paper in X:
             idx = _encode(paper, idx)
 
-        return self.word_mapper
+        return self.idx2word
 
 
     @logging_time
-    def tokenize_papers(self, X=None, pad=True, word_mapper=None):
+    def tokenize_papers(self, X=None, pad=True, idx2word=None):
 
         '''
         This will map word > index
@@ -174,17 +174,20 @@ class Preprocess:
         if X is None:
             X = self.X_filter
 
-        if word_mapper is None:
-            word_mapper = self.word_mapper
+        if idx2word is None:
+            idx2word = self.idx2word
 
-        word2idx = {v: k for k, v in self.word_mapper.items()}
+        word2idx = {v: k for k, v in self.idx2word.items()}
         def _tokenize(paper):
             
-            words = list(filter(lambda x: x, paper.split(' ')))
+            words = list(filter(lambda x: x, paper.lower().split(' ')))
             SEQ_LEN = self.cfg.MAX_LEN if pad else len(words)
             tokens = [0 for _ in range(SEQ_LEN)]
             for idx in range(min(len(words), SEQ_LEN)):
-                tokens[idx] = word2idx[words[idx]]
+                try:
+                    tokens[idx] = word2idx[words[idx]]
+                except:
+                    tokens[idx] = word2idx['<unk>']
                 
             return tokens
 
@@ -217,11 +220,11 @@ class Preprocess:
             model = self.fasttext
 
         embed_dim = model.wv.vectors.shape[1]
-        word_mapper = self.word_mapper
+        idx2word = self.idx2word
         def embed(word): # EMBED A SINGLE WORD TO EMBEDDED VECTOR
 
             if isinstance(word, int): # IF INDEX IS GIVEN, CONVERT TO WORD
-                word = word_mapper[word]
+                word = idx2word[word]
             
             if word == '<pad>': # IF PAD, JUST RETURN 0 VECTOR
                 return np.zeros((1, embed_dim))
@@ -258,13 +261,13 @@ class Preprocess:
         np.save(os.path.join(self.cfg.DATA_DIR, 'X_tokenized.npy'), X)
 
 
-    def save_word_mapper(self, fname=None):
+    def save_idx2word(self, fname=None):
 
         if fname is None:
-            fname = 'word_mapper.yml'
+            fname = 'idx2word.yml'
 
         with open(os.path.join(self.cfg.DATA_DIR, fname), 'w') as y:
-            yaml.dump(self.word_mapper, y)
+            yaml.dump(self.idx2word, y)
 
 
     def save_fasttext(self, model=None):
@@ -289,14 +292,14 @@ class Preprocess:
         return np.load(os.path.join(self.cfg.DATA_DIR, fname))
 
 
-    def load_word_mapper(self, fname=None):
+    def load_idx2word(self, fname=None):
 
         if fname is None:
-            fname = 'word_mapper.yml'
+            fname = 'idx2word.yml'
         
         with open(os.path.join(self.cfg.DATA_DIR, fname), 'r') as y:
-            self.word_mapper = yaml.load(y, Loader=yaml.FullLoader)
-            return self.word_mapper
+            self.idx2word = yaml.load(y, Loader=yaml.FullLoader)
+            return self.idx2word
 
     
     def load_fasttext(self, fname=None):
