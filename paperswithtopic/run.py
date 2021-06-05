@@ -104,11 +104,8 @@ def run(cfg, debug=False):
 @logging_time
 def train(dataloader, model, optimizer, cfg, total_targets=None):
 
-    if total_targets is None:
-        total_targets = dataloader.dataset.label
-
     model.train()
-    total_preds = []
+    total_preds, total_targets = [], []
     losses = []
     for step, batch in enumerate(dataloader):
 
@@ -125,8 +122,10 @@ def train(dataloader, model, optimizer, cfg, total_targets=None):
 
         preds = preds.to('cpu').detach().numpy()
         total_preds.append(preds) 
+        total_targets.append(label.to('cpu').detach().numpy())
       
     total_preds = np.concatenate(total_preds)
+    total_targets = np.concatenate(total_targets)
 
     auc = get_auc(total_targets, total_preds)
     loss_avg = sum(losses) / len(losses)

@@ -26,10 +26,11 @@ hidden_dim: 128 # for models
 n_layers: 1
 n_heads: 8
 
-## BERT
+## BERTs
 which_output: last_hidden_state
 use_bert_embed: False
 
+## XLMs
 pad_index: 0
 unk_index: 1
 
@@ -41,7 +42,7 @@ weight_decay: .0
 loss: bce # Multi Label Margin Loss
 start_epoch: 0
 n_epochs: 100
-early_patience: 30
+early_patience: 10
 save_period: 1
 
 
