@@ -1,4 +1,5 @@
 import os
+import re
 import time
 import yaml
 import numpy as np
@@ -17,6 +18,9 @@ class Preprocess:
             cfg = load_config()
 
         self.cfg = cfg
+        
+        self._pad = '<pad>'
+        self._unk = '<unk>'
 
 
     @logging_time
@@ -45,12 +49,18 @@ class Preprocess:
 
 
     @logging_time
+    def preprocess_infer(self, paper):
+
+        paper = self.remove_unknown(paper)
+        paper = self.tokenize_papers(paper)
+        return paper
+
+
+    @logging_time
     def pp_pipeline(self, path=None, return_y=True):
 
         '''
         1. LOAD RAW PAPERS
-        2. BUILD LETTER MAPPER
-        3. BUILD UNKNOWN LETTERSET
         4. REMOVE UNKNOWNS
         5. BUILD WORD MAPPER
         6. TOKENIZE (WORD2IDX)
@@ -61,13 +71,6 @@ class Preprocess:
 
         # 1. LOAD RAW PAPERS
         X = self.retrieve_raw_papers(df)
-
-        # 2. BUILD LETTER MAPPER
-        #   This will make self.letter_mapper
-        self.build_letter_mapper()
-
-        # 3. BUILD UNKNOWN LETTERSET
-        self.build_unkown_letterset(X)
 
         X = self.remove_unknown(X)
         self.build_word_mapper(X)
@@ -121,69 +124,12 @@ class Preprocess:
 
 
     @logging_time
-    def build_letter_mapper(self):
-
-        # LETTER MAPPER
-        #   make letter mapper that has
-        #   used_letter: idx
-        #   only includes numbers / alphabets
-
-        self._pad = '<pad>'
-        self._unk = '<unk>'
-
-        ascii_list = list(range(48, 58)) + list(range(65, 91)) + list(range(97, 123))
-        letter_mapper = {
-            chr(_ascii): i+2 for i, _ascii in enumerate(ascii_list)
-        }
-        letter_mapper[self._pad] = 0
-        letter_mapper[self._unk] = 1
-
-        self.letter_mapper = letter_mapper
-        return self.letter_mapper
-
-
-    @logging_time
-    def build_unkown_letterset(self, X=None):
-
-        # BUILD UNKNOWN LETTERSET
-        #   should be run after -
-        #   1. load_raw_papers X_Raw
-        #   2. build_letter_mapper
-
-        # Make unknown letter set
-        if X is None:
-            X = self.X_raw
-
-        letter_counter = {k: 0 for k in self.letter_mapper.keys()}
-        self.unk_letterset = set()
-        for paper in X:
-            
-            for letter in paper:
-                
-                try:
-                    if letter_counter.get(letter) >= 0:
-                        letter_counter[letter] += 1
-                    
-                except:
-                    letter_counter[self._unk] += 1
-                    self.unk_letterset.add(letter)
-
-        self.unk_letterset.remove(' ')
-        return self.unk_letterset
-
-
-    @logging_time
     def remove_unknown(self, X=None):
 
         if X is None:
             X = self.X_raw
 
-        def _remove(sentence):
-
-            for _unk in self.unk_letterset:
-                sentence = sentence.replace(_unk, '')
-            return sentence
-
+        _remove = lambda sentence: ''.join([l for l in sentence if l.isalnum() or l == ' '])
         self.X_filter = list(map(_remove, X))
         return self.X_filter
 
@@ -196,7 +142,7 @@ class Preprocess:
 
         self.word_mapper = {0: self._pad, 1: self._unk}
         def _encode(paper, idx):
-            is_valid = lambda l: l in self.letter_mapper.keys()
+            is_valid = lambda l: l.isalnum() or l == ' '
             
             for word in list(filter(lambda x: x, paper.split(' '))):
                 
@@ -360,3 +306,57 @@ class Preprocess:
 
         self.fasttext = FastText.load(os.path.join(self.cfg.data_dir, fname))
         return self.fasttext
+
+    
+    @logging_time
+    def __build_letter_mapper(self): # DEPRECATED
+
+        # LETTER MAPPER
+        #   make letter mapper that has
+        #   used_letter: idx
+        #   only includes numbers / alphabets
+
+        self._pad = '<pad>'
+        self._unk = '<unk>'
+
+        ascii_list = list(range(48, 58)) + list(range(65, 91)) + list(range(97, 123))
+        letter_mapper = {
+            chr(_ascii): i+2 for i, _ascii in enumerate(ascii_list)
+        }
+        letter_mapper[self._pad] = 0
+        letter_mapper[self._unk] = 1
+
+        self.letter_mapper = letter_mapper
+        return self.letter_mapper
+
+
+    @logging_time
+    def __build_unkown_letterset(self, X=None): # DEPRECATED
+
+        # BUILD UNKNOWN LETTERSET
+        #   should be run after -
+        #   1. load_raw_papers X_Raw
+        #   2. build_letter_mapper
+
+        # Make unknown letter set
+        if X is None:
+            X = self.X_raw
+
+        letter_counter = {k: 0 for k in self.letter_mapper.keys()}
+        self.unk_letterset = set()
+        for paper in X:
+            
+            for letter in paper:
+                
+                try:
+                    if letter_counter.get(letter) >= 0:
+                        letter_counter[letter] += 1
+                    
+                except:
+                    letter_counter[self._unk] += 1
+                    self.unk_letterset.add(letter)
+
+        self.unk_letterset.remove(' ')
+        return self.unk_letterset
+
+  
