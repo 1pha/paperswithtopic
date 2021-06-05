@@ -1,6 +1,7 @@
 X_tokenized.npy
 wandb
 data/*
+models/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
