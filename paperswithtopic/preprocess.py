@@ -2,6 +2,7 @@ import os
 import re
 import time
 import yaml
+import torch
 import numpy as np
 import pandas as pd
 from gensim.models import FastText
@@ -47,13 +48,41 @@ class Preprocess:
             self.load_data()
             return self.paper_df.values
 
+    
+    @logging_time
+    def build_mask(self, paper: list): 
+
+        '''
+        paper: (batch_size, max_seq_len) list consists with index.
+        > outputs (batch_size, max_seq_len) of masks
+        '''
+
+        mask = torch.ones(self.cfg.MAX_LEN)
+        if paper.index(0) < self.cfg.MAX_LEN:
+            mask[paper.index(0):] = 0
+
+        return mask
+
 
     @logging_time
     def preprocess_infer(self, paper):
 
+        if not hasattr(self, 'idx2word'):
+            self.idx2word = self.load_idx2word()
+
+        if isinstance(paper, str):
+            paper = [paper]
+
         paper = self.remove_unknown(paper)
         paper = self.tokenize_papers(paper)
-        return paper
+        mask = torch.stack(list(map(self.build_mask, paper)))
+
+        if self.cfg.pre_embed:
+            if not hasattr(self, 'fasttext'):
+                self.load_fasttext()
+            paper = self.embed_paper(paper)
+
+        return torch.tensor(paper), mask
 
 
     @logging_time
@@ -159,6 +188,7 @@ class Preprocess:
         for paper in X:
             idx = _encode(paper, idx)
 
+        self.save_idx2word()
         return self.idx2word
 
 
@@ -177,7 +207,7 @@ class Preprocess:
         if idx2word is None:
             idx2word = self.idx2word
 
-        word2idx = {v: k for k, v in self.idx2word.items()}
+        self.word2idx = {v: k for k, v in self.idx2word.items()}
         def _tokenize(paper):
             
             words = list(filter(lambda x: x, paper.lower().split(' ')))
@@ -185,9 +215,9 @@ class Preprocess:
             tokens = [0 for _ in range(SEQ_LEN)]
             for idx in range(min(len(words), SEQ_LEN)):
                 try:
-                    tokens[idx] = word2idx[words[idx]]
+                    tokens[idx] = self.word2idx[words[idx]]
                 except:
-                    tokens[idx] = word2idx['<unk>']
+                    tokens[idx] = self.word2idx['<unk>']
                 
             return tokens
 
@@ -299,6 +329,7 @@ class Preprocess:
         
         with open(os.path.join(self.cfg.DATA_DIR, fname), 'r') as y:
             self.idx2word = yaml.load(y, Loader=yaml.FullLoader)
+            self.word2idx = {v: k for k, v in self.idx2word.items()}
             return self.idx2word
 
     
@@ -307,7 +338,7 @@ class Preprocess:
         if fname is None:
             fname = f'fasttext{self.cfg.embed_dim}.model'
 
-        self.fasttext = FastText.load(os.path.join(self.cfg.data_dir, fname))
+        self.fasttext = FastText.load(os.path.join(self.cfg.DATA_DIR, fname))
         return self.fasttext
 
     

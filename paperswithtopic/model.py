@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from torchsummary import summary
 
-from transformers.models.bert.modeling_bert import (
+from transformers import (
     BertModel, BertConfig, BertForSequenceClassification,
     AlbertModel, AlbertConfig, AlbertForSequenceClassification,
     ElectraModel, ElectraConfig, ElectraForSequenceClassification,
@@ -303,10 +303,12 @@ class XLMClassification(BERTClassification):
         self.config = XLMConfig( 
             vocab_size=self.cfg.vocab_size,
             hidden_size=self.cfg.hidden_dim,
-            num_hidden_layers=self.cfg.n_layers,
-            num_attention_heads=self.cfg.n_heads,
+            n_layers=self.cfg.n_layers,
+            n_heads=self.cfg.n_heads,
             max_position_embeddings=self.cfg.MAX_LEN,
             num_labels=self.num_class,       
+            pad_index=self.cfg.pad_index,
+            unk_index=self.cfg.unk_index,
         )
         self.encoder = XLMForSequenceClassification(self.config)
     

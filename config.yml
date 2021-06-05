@@ -30,6 +30,9 @@ n_heads: 8
 which_output: last_hidden_state
 use_bert_embed: False
 
+pad_index: 0
+unk_index: 1
+
 # TRAIN
 optimizer: adam
 scheduler: plateau
@@ -39,6 +42,7 @@ loss: bce # Multi Label Margin Loss
 start_epoch: 0
 n_epochs: 100
 early_patience: 30
+save_period: 1
 
 
 # MISC

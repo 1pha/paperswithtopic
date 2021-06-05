@@ -9,7 +9,7 @@ from .dataloader import get_dataloader
 from .optimizer import get_optimizer, get_scheduler
 from .model import load_model
 from .metrics import get_loss, get_auc
-from .misc import logging_time, seed_everything
+from .misc import logging_time, seed_everything, get_today
 
 
 def setup(cfg, debug=False):
@@ -35,8 +35,9 @@ def setup(cfg, debug=False):
         idx2word = preprocess.idx2word
         
     cfg.vocab_size = len(idx2word)
-    train_dataloader = get_dataloader(cfg, X, y, test=False)
-    valid_dataloader = get_dataloader(cfg, X, y, test=True)
+    cfg.PTH_DIR = os.path.join(cfg.PTH_DIR, f'{get_today()}_{cfg.model_name}')
+    train_dataloader = get_dataloader(cfg, X, y, test=False, shuffle=True)
+    valid_dataloader = get_dataloader(cfg, X, y, test=True, shuffle=False)
 
     if not debug:
         return train_dataloader, valid_dataloader
@@ -76,7 +77,7 @@ def run(cfg, debug=False):
 
         model_name = f'{cfg.model_name}_EP{epoch+1}_VALAUC{val_auc*100:.0f}.pth'
 
-        if cfg.save_period % (epoch + 1) == 0:
+        if (epoch + 1) % cfg.save_period == 0:
             save_checkpoint(model.state_dict(), model_name, model_dir=cfg.PTH_DIR)
 
         if val_auc > best_auc:

@@ -41,6 +41,7 @@ class PaperDataset(Dataset):
 
         return paper, label, mask
 
+
     def __len__(self):
         return len(self.data)
 
@@ -56,7 +57,8 @@ class PaperDataset(Dataset):
         mask = torch.ones(self.seq_len)
         if sum(_paper != 0) < self.seq_len:
             mask[sum(_paper != 0):] = 0
-        return mask        
+
+        return mask
 
     
 def get_dataloader(cfg, X, y, test, **kwargs):
