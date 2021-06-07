@@ -33,6 +33,18 @@ def inference(cfg, papers: list, model_path=None):
 
     return pred
 
+@logging_time
+def inference_with_model(cfg, papers, model):
+
+    preprocess = Preprocess(cfg=cfg)
+    batch = preprocess.preprocess_infer(papers)
+    papers, mask = map(lambda x: x.to(cfg.device), batch)
+
+    with torch.no_grad():
+        pred = model(papers, mask)
+        pred = pred.to('cpu').detach().numpy()
+
+    return pred
 
 def revert2class(preds, cfg, topn=3):
 

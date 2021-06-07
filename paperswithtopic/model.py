@@ -286,6 +286,7 @@ class ELECTRAClassification(BERTClassification):
 
         self.config = ElectraConfig( 
             vocab_size=self.cfg.vocab_size,
+            embedding_size=self.cfg.hidden_dim,
             hidden_size=self.cfg.hidden_dim,
             num_hidden_layers=self.cfg.n_layers,
             num_attention_heads=self.cfg.n_heads,
