@@ -22,8 +22,9 @@ I started this project to organize papers in some sort of way.
 3. With you internet browser open, go to `localhost:6010` (why 6010? Don't ask)
 4. Type in any paper you want, and see how your result goes
 
-Demo video attached below.
+Demo video attached below.<br>
 https://user-images.githubusercontent.com/62973169/121147618-fca2ea80-c87b-11eb-9e6a-35a76d9ef020.mp4
+<br>
 
 
 ### Train
