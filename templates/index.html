@@ -91,7 +91,6 @@
             </p>
             <textarea style="width:100%; height:100px;" id='paper' class='btn-lg'>example</textarea>
             <button type="button" id='infer-btn' class="btn btn-primary btn-lg infer-btn">INFER</button>
-            
             <div class="spinner-grow" id='spinner' role="status" style="display:none;">
                 <span class="sr-only"></span>
             </div>
@@ -103,10 +102,7 @@
                     <span id="top3">0</span> <span id="top3-proba">0</span> % <br>
                     <p>새로고침 후에 다시 시도해보세요!</p>
                 </div>
-                
             </div>
-            
-
         </div>
         <script>
             function infer(){
@@ -149,6 +145,7 @@
             document.addEventListener('click', function(event) {
                 if (!event.target.closest('.btn')) return;
                 if (event.target.closest('.infer-btn')){
+                    document.querySelector("#result").style.display = 'none';
                     document.querySelector("#spinner").style.display = 'inline-block';
                     infer();
                 }
