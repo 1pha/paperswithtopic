@@ -22,6 +22,10 @@ I started this project to organize papers in some sort of way.
 3. With you internet browser open, go to `localhost:6010` (why 6010? Don't ask)
 4. Type in any paper you want, and see how your result goes
 
+Demo video attached below.
+https://user-images.githubusercontent.com/62973169/121147618-fca2ea80-c87b-11eb-9e6a-35a76d9ef020.mp4
+
+
 ### Train
 ```
 import wandb
@@ -40,6 +44,7 @@ Change configurations if needed. Options in taste might be ...
     - Difference between naive transformer models and classification (such as `bert` vs. `bertclassification`) is -
       - `bert` feedforwards last hidden state to FC so on so forth, while ...
       - `bertclassification` directly outputs logits
+      - 
 ## Further works   
 There are so much more things can be done here such as ...
 - If the user not satisfied with their result, they can give a correct selection on their own and retrain the model.
