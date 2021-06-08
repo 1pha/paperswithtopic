@@ -31,16 +31,18 @@ https://user-images.githubusercontent.com/62973169/121147618-fca2ea80-c87b-11eb-
 
 
 ### Train
-```
+```python
 import wandb
 from paperswithtopic.config import load_config
 from paperswithtopic.run import run
 
 cfg = load_config()
+# cfg.model_name = 'electraclassification' # for examples
 run(cfg)
 ```
 Change configurations if needed. Options in taste might be ...
-- `model_name`: I have
+- `model_name`: I have below models
+  - Machine Learning Models: not yet implemented.
   - Traditional Sequential models: `rnn`, `lstm`, `gru`
   - Transformer models: `bert`, `bertclassification`, `albert`, `albertclassification`, `electra`, `electraclassification`
     - `xlm`, `xlmclassification` does not work currently
@@ -48,9 +50,10 @@ Change configurations if needed. Options in taste might be ...
     - Difference between naive transformer models and classification (such as `bert` vs. `bertclassification`) is -
       - `bert` feedforwards last hidden state to FC so on so forth, while ...
       - `bertclassification` directly outputs logits
-      - 
+-  `hidden_dim` dimensionality used in deep learning models.
+
 ## Further works   
 There are so much more things can be done here such as ...
-- If the user not satisfied with their result, they can give a correct selection on their own and retrain the model.
+- If the user is not satisfied with their result, they can give a correct selection on their own and retrain the model.
 - Show probabilities above 3% (set a threshold)
-- 
+- Selection of models: user can choose which model to make the output from
