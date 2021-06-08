@@ -28,10 +28,16 @@ def inference(cfg, papers: list, model_path=None):
     
     model.eval()
     with torch.no_grad():
-        pred = model(papers, mask)
-        pred = pred.to('cpu').detach().numpy()
 
-    return pred
+        if cfg.output_attentions:
+            pred, attn = model(papers, mask)
+            pred = pred.to('cpu').detach().numpy()
+            return pred, attn
+
+        else:
+            pred = model(papers, mask)
+            pred = pred.to('cpu').detach().numpy()
+            return pred
 
 @logging_time
 def inference_with_model(cfg, papers, model):

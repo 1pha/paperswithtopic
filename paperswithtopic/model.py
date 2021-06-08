@@ -231,7 +231,8 @@ class BERTClassification(SequenceModel):
             num_hidden_layers=self.cfg.n_layers,
             num_attention_heads=self.cfg.n_heads,
             max_position_embeddings=self.cfg.MAX_LEN,
-            num_labels=self.num_class,       
+            num_labels=self.num_class,
+            output_attentions=self.cfg.output_attentions
         )
         self.encoder = BertForSequenceClassification(self.config)
 
@@ -245,7 +246,6 @@ class BERTClassification(SequenceModel):
         '''
 
         if not self.cfg.pre_embed: # given (batch_size, seq_len)
-
             if not self.cfg.use_bert_embed: # USE TORCH EMBEDDING LAYER
                 x = self.embed_layer(x)
                 x = self.encoder(inputs_embeds=x, attention_mask=mask)
@@ -254,9 +254,14 @@ class BERTClassification(SequenceModel):
                 x = self.encoder(input_ids=x, attention_mask=mask)
 
         else: # given (batch_size, seq_len, hidden_dim)
-            
             x = self.encoder(inputs_embeds=x, attention_mask=mask)
         
+        if self.cfg.output_attentions:
+            
+            # ATTENTION (batch_size, num_heads, sequence_length, sequence_length)
+            out = self.sfx(x['logits'])
+            return out, x['attentions']
+
         x = x['logits']
         x = self.sfx(x)
 

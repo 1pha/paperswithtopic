@@ -33,3 +33,4 @@ use_saved: true
 vocab_size: 30562
 weight_decay: 0.0
 which_output: last_hidden_state
+output_attentions: False

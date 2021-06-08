@@ -34,6 +34,9 @@ use_bert_embed: False
 pad_index: 0
 unk_index: 1
 
+## CLASSIFICATION MODELS
+output_attentions: False
+
 # TRAIN
 optimizer: adam
 scheduler: plateau

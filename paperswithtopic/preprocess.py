@@ -5,7 +5,10 @@ import yaml
 import torch
 import numpy as np
 import pandas as pd
-from gensim.models import FastText
+try:
+    from gensim.models import FastText
+except:
+    pass
 
 from .config import load_config
 from .misc import logging_time
