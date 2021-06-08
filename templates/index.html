@@ -79,7 +79,6 @@
                     font-size:45px !important;
                 }
             }
-            
         </style>
     </head>
     <body>
@@ -97,30 +96,8 @@
                 <span class="sr-only"></span>
             </div>
             <div class="row justify-content-lg-center">
-                <div class="col col-lg-auto" id="question-section" style="opacity:0" data-started='false'>
-                    <h2>문제 <span id="q-number">1</span></h2>
-                    <div class="game-box">
-                        <div class="">
-                            <img id='question-image' class="rounded mx-auto d-block" 
-                            src="https://source.unsplash.com/random/400x300"/>
-                            <p id="question-text">위의 그림은 <span id="tag"></span>입니까? </p>
-                        </div>
-                        <div class="row" style="margin-top:20px;">
-                            <div class="col-sm-6">
-                                <button type="button" data-answer='1' class="btn btn-primary btn-lg answer-btn">Yes</button>
-                            </div>
-                            <div class="col-sm-6">
-                                <button type="button" data-answer='0'class="btn btn-danger btn-lg answer-btn">No</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                </div>
                 <div id="result" style="display:none;">
-                    <!-- <h3>Your predicted score is:</h3>
-                    <span id="value">0</span> / 100
-                    <p>새로고침 후에 다시 시도해보세요!</p> -->
-                    <h3>Your predicted score is:</h3>
+                    <h3>This paper might be ...</h3>
                     <span id="top1">0</span> <span id="top1-proba">0</span> % <br>
                     <span id="top2">0</span> <span id="top2-proba">0</span> % <br>
                     <span id="top3">0</span> <span id="top3-proba">0</span> % <br>
@@ -132,69 +109,8 @@
 
         </div>
         <script>
-            var QUESTION_LIST = [
-                    {'q_content':'사람', 'tag':7597, 'test_id':'A010000060', 'assess_id':'A010060001'},
-                    {'q_content':'동물', 'tag':397, 'test_id':'A050000094', 'assess_id':'A050094005'},
-                    {'q_content':'자연', 'tag':451, 'test_id':'A050000155', 'assess_id':'A050155004'},
-                    {'q_content':'물건', 'tag':587, 'test_id':'A060000017', 'assess_id':'A060017006'},
-                    {'q_content':'실제', 'tag':4803, 'test_id':'A080000031', 'assess_id':'A080031001'},
-                ];
-            var answers = [];
-            function getRandomIntInclusive(min, max) {
-                min = Math.ceil(min);
-                max = Math.floor(max);
-                return Math.floor(Math.random() * (max - min + 1)) + min; //최댓값도 포함, 최솟값도 포함
-            }
-            function set_question(index){
-                let q_content = QUESTION_LIST[index].q_content;
-                // $('#tag').text(q_content);
-                document.querySelector("#tag").innerHTML = q_content;
-                document.querySelector("#q-number").innerHTML = index+1;
-                
-                //이미지 URL을 다르게 해야 짧은 시간 내의 재요청시에도 다른 이미지가 나옴
-                var height = getRandomIntInclusive(290,310);
-                var width = getRandomIntInclusive(390,410);
-                var url = `https://source.unsplash.com/random/${width}x${height}`;
-                document.querySelector("#question-image").src = url;
-            }
-            
-            function get_score(){
-                for (var i = 0; i < QUESTION_LIST.length; i++) {
-                    QUESTION_LIST[i]['answer'] = answers[i]
-                }
-
-                fetch('/get_score', {
-                    method: 'POST', // or 'PUT'
-                    body: JSON.stringify(QUESTION_LIST), // data can be `string` or {object}!
-                    headers:{
-                        'Content-Type': 'application/json'
-                    }
-                }).then(res => res.json())
-                .then(response => {
-                    var score = parseInt(JSON.stringify(response));
-                    document.querySelector("#spinner").style.display = 'none';
-                    document.querySelector("#question-section").style.display = 'none';
-                    document.querySelector("#result").style.display = 'block';
-                    if (score != 0){
-                        animateValue("value", 0, JSON.stringify(response), 3000)
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            }
-
-            function show(id, result){ 
-                // result contains (field, score)
-                var obj = document.getElementById(id);
-                obj.innerHTML = result[0];
-                if (result[1] > 0){
-                    var name = "".concat(id, '-proba');
-                    animateValue(name, 0, JSON.stringify(result['top1'][1]), 3000);
-                }
-            }
-
-            function test(){
-
-                fetch('/test', {
+            function infer(){
+                fetch('/infer', {
                     method: 'POST', // or 'PUT'
                     body: JSON.stringify(document.getElementById('paper').value), // data can be `string` or {object}!
                     headers:{
@@ -203,8 +119,8 @@
                 }).then(res => res.json())
                 .then(response => {
                     document.querySelector("#spinner").style.display = 'none';
-                    document.querySelector("#question-section").style.display = 'none';
                     document.querySelector("#result").style.display = 'block';
+
                     var result = response;
                     
                     var obj = document.getElementById('top1');
@@ -230,48 +146,13 @@
                 })
             }
 
-            var isClciked = false;
-            document.addEventListener('click', function (event) {
+            document.addEventListener('click', function(event) {
                 if (!event.target.closest('.btn')) return;
                 if (event.target.closest('.infer-btn')){
                     document.querySelector("#spinner").style.display = 'inline-block';
-                    test();
-                }
-                if (event.target.closest('.answer-btn')){
-                    if (isClciked) return;
-                    isClciked=true;
-                    
-                    event.target.dataset.clicked = true;
-                    var answer = event.target.dataset.answer;
-                    var index = parseInt(document.querySelector("#q-number").innerHTML);
-                        
-                    answers.push(answer)
-                    if (index==1){
-                        setTimeout(function(){
-                            get_score();
-                        },1000);
-                    }else{
-                        setTimeout(function(){
-                            set_question(index);
-                        },500);
-                    }
-                    document.querySelector("#spinner").style.display = 'inline-block';
-                    document.querySelector("#question-section").style.opacity = 0;
-                }else if (event.target.closest('#start-btn')){
-                    document.querySelector("#question-section").dataset.started = true;
-                    document.querySelector("#start-btn").style.display='none';
-                    document.querySelector("#spinner").style.display = 'inline-block';
-                    set_question(0);
+                    infer();
                 }
             });
-            
-            document.querySelector("#question-image").onload = function() {
-                if (document.querySelector("#question-section").dataset.started !=='false'){
-                    document.querySelector("#spinner").style.display = 'none';
-                    document.querySelector("#question-section").style.opacity = 1;
-                    isClciked=false;
-                }
-            }
 
             function animateValue(id, start, end, duration) {
                 if (start === end) return;
@@ -288,8 +169,6 @@
                     }
                 }, stepTime);
             }
-
-        
         </script>
     </body>
 </html>

@@ -22,8 +22,8 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/test', methods=['POST'])
-def test():
+@app.route('/infer', methods=['POST'])
+def infer():
 
     paper = request.json # WILL GET string paper name
 
@@ -36,39 +36,6 @@ def test():
     
     return cvt_pred
 
-
-@app.route('/get_score', methods=['POST'])
-def get_score():
-
-    '''
-    1. PREPROCESS
-    2. INFERENCE
-    3. TO JSON
-        - IN THE FORM OF
-        - {
-            'top1': (field1, proba1),
-            'top2': (field2, proba2),
-            'top3': (field3, proba3),
-        }
-    '''
-
-    data = request.json
-    print(data)
-    user_data = []
-    print(data)
-    for d in data:
-        if 'answer' in d:
-            row = [d['assess_id'], d['test_id'],d['tag'], d['answer']]
-            user_data.append(row)
-     
-    print(user_data)
-    # score = inference.inference(user_data)
-    # score = int(score)
-    # # WILL RETURN IN FORM OF
-    score = 100
-    
-    return str(score)
-
 if __name__ == '__main__':
 
-    app.run(host="0.0.0.0", port=6009, debug=True)
+    app.run(host="0.0.0.0", port=6010, debug=True)
