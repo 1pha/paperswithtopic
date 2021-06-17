@@ -39,6 +39,38 @@ def inference(cfg, papers: list, model_path=None):
             pred = pred.to('cpu').detach().numpy()
             return pred
 
+
+@logging_time
+def _inference(cfg, papers: list, model_path=None):
+
+    '''
+    This function is made to do afterworks for the project
+    '''
+
+    cfg.num_class = 16 - len(cfg.drop)
+    model, cfg.device = load_model(cfg)
+    if model_path is not None:
+        model.load_state_dict(torch.load(model_path))
+
+    preprocess = Preprocess(cfg=cfg)
+    batch = preprocess.preprocess_infer(papers)
+    papers, mask = map(lambda x: x.to(cfg.device), batch)
+    
+    model.eval()
+    with torch.no_grad():
+
+        if cfg.output_attentions:
+            pred, attn = model(papers, mask)
+            pred = pred.to('cpu').detach().numpy()
+            attn = tuple(map(lambda x: x.cpu().detach().numpy(), attn))
+            return pred, attn, (papers.cpu().detach().numpy(), mask.cpu().detach().numpy())
+
+        else:
+            pred = model(papers, mask)
+            pred = pred.to('cpu').detach().numpy()
+            return pred, (papers.cpu().detach().numpy(), mask.cpu().detach().numpy())
+
+
 @logging_time
 def inference_with_model(cfg, papers, model):
 

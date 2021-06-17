@@ -16,7 +16,8 @@ model, cfg.device = load_model(cfg)
 model_path = './asset/bertclassification_EP12_VALAUC92.pth'
 model.load_state_dict(torch.load(model_path))
 model.eval()
- 
+
+
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html')

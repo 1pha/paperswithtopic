@@ -8,6 +8,7 @@ from transformers import (
     AlbertModel, AlbertConfig, AlbertForSequenceClassification,
     ElectraModel, ElectraConfig, ElectraForSequenceClassification,
     XLMModel, XLMConfig, XLMForSequenceClassification,
+    RobertaModel, RobertaConfig, RobertaForSequenceClassification
 )
 
 def load_model(cfg):
@@ -23,12 +24,14 @@ def load_model(cfg):
         'bert': BERT,
         'albert': ALBERT,
         'electra': ELECTRA,
-        'xlm': XLM,
-        'pretrainedbert': PretrainedBERT,
+        'xlm': XLM, # DEPRECATED
+        'roberta': ROBERTA, # DEPRECATED
+        'pretrainedbert': PretrainedBERT, # DEPRECATED
         'bertclassification': BERTClassification,
         'albertclassification': ALBERTClassification,
         'electraclassification': ELECTRAClassification,
-        'xlmclassification': XLMClassification,
+        'xlmclassification': XLMClassification, # DEPRECATED
+        'robertaclassification': ROBERTAClassification # DEPRECATED
     }[cfg.model_name.lower()](cfg).to(device), device
 
 
@@ -218,6 +221,28 @@ class XLM(BERT):
             num_labels=self.num_class,       
         )
         self.encoder = XLMModel(self.config)
+
+
+class ROBERTA(BERT):
+
+    '''
+    ROBERTA OUTPUTS
+        - last_hidden_state (batch_size, seq_len, hidden_dim)
+        - NO POOLER OUTPUT
+    '''
+
+    def __init__(self, cfg):
+        super().__init__(cfg)
+
+        self.config = RobertaConfig( 
+            vocab_size=self.cfg.vocab_size,
+            hidden_size=self.cfg.hidden_dim,
+            num_hidden_layers=self.cfg.n_layers,
+            num_attention_heads=self.cfg.n_heads,
+            max_position_embeddings=self.cfg.MAX_LEN,
+            num_labels=self.num_class,       
+        )
+        self.encoder = RobertaModel(self.config)
         
 
 class BERTClassification(SequenceModel):
@@ -317,6 +342,23 @@ class XLMClassification(BERTClassification):
             unk_index=self.cfg.unk_index,
         )
         self.encoder = XLMForSequenceClassification(self.config)
+
+
+class ROBERTAClassification(BERTClassification):
+
+    def __init__(self, cfg):
+        super().__init__(cfg)
+
+        self.config = BertConfig( 
+            vocab_size=self.cfg.vocab_size,
+            hidden_size=self.cfg.hidden_dim,
+            num_hidden_layers=self.cfg.n_layers,
+            num_attention_heads=self.cfg.n_heads,
+            max_position_embeddings=self.cfg.MAX_LEN,
+            num_labels=self.num_class,
+            output_attentions=self.cfg.output_attentions
+        )
+        self.encoder = RobertaForSequenceClassification(self.config)
     
 
 class RNN(SequenceModel):
