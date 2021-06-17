@@ -8,15 +8,14 @@ import numpy as np
 import pandas as pd
 from easydict import EasyDict as edict
 
-
-from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, confusion_matrix, classification_report
+from sklearn.metrics import roc_auc_score, accuracy_score
 
 
 @dataclass
 class MultilabelTrainer:
     
     cfg: edict
-    model_class: Optional[class]
+    model_class: Optional[dict]
     X_train: np.ndarray
     y_train: np.ndarray
     idx2column: None
