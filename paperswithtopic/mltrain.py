@@ -1,5 +1,3 @@
-import os
-import time
 from dataclasses import dataclass
 from typing import Optional
 
@@ -18,7 +16,7 @@ from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, conf
 class MultilabelTrainer:
     
     cfg: edict
-    model_class: Optional
+    model_class: Optional[class]
     X_train: np.ndarray
     y_train: np.ndarray
     idx2column: None
