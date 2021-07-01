@@ -1,12 +1,10 @@
 import os
-import re
-import time
 import yaml
 import torch
 import numpy as np
 import pandas as pd
 try:
-    from gensim.models import FastText
+    from gensim.models import FastText, Word2Vec
 except:
     pass
 
@@ -81,9 +79,9 @@ class Preprocess:
         mask = torch.stack(list(map(self.build_mask, paper)))
 
         if self.cfg.pre_embed:
-            if not hasattr(self, 'fasttext'):
+            if not hasattr(self, 'gensim'):
                 self.load_fasttext()
-            paper = self.embed_paper(paper)
+            paper = self.embed_gensim(paper)
 
         return torch.tensor(paper), mask
 
@@ -102,16 +100,17 @@ class Preprocess:
         df = self.load_data(path)
 
         # 1. LOAD RAW PAPERS
-        X = self.retrieve_raw_papers(df)
-
-        X = self.remove_unknown(X)
+        X = self.retrieve_raw_papers(df) # -> X_raw
+        X = self.remove_unknown(X) # -> X_filter
         self.build_idx2word(X)
-        X = self.tokenize_papers(X, self.cfg.PAD)
 
         # +. EMBED PAPERS
         if self.cfg.pre_embed:
-            self.fasttext = self.train_fasttext(X=self.X_raw, embed_dim=self.cfg.embed_dim, window=self.cfg.MAX_LEN)
-            X = self.embed_paper(X)
+            self.gensim = self.train_embed(X=X, embed_dim=self.cfg.embed_dim, window=self.cfg.MAX_LEN)
+            X = self.embed_gensim(X)
+
+        else: 
+            X = self.tokenize_papers(X, self.cfg.PAD)
 
         if not return_y:
             return X
@@ -229,35 +228,34 @@ class Preprocess:
 
 
     @logging_time
-    def train_fasttext(self, X=None, embed_dim=None, **kwargs):
+    def train_embed(self, X=None, embed_dim=None, **kwargs):
 
         if X is None:
-            X = self.X_raw
+            X = self.X_filter
 
         if embed_dim is None:
             embed_dim = self.cfg.embed_dim
 
         X_fasttext = list(map(str.split, X))
-        model = FastText(sentences=X_fasttext, vector_size=embed_dim, **kwargs)
-
-        return model
+        print(f'Use {self.cfg.pre_embed} as embedding')
+        if self.cfg.pre_embed == 'fasttext':
+            return FastText(sentences=X_fasttext, vector_size=embed_dim, **kwargs)
+        
+        elif self.cfg.pre_embed == 'word2vec':
+            return Word2Vec(sentences=X_fasttext, vector_size=embed_dim, min_count=0, **kwargs)
 
 
     @logging_time
-    def embed_paper(self, X=None, model=None, **kwargs):
+    def embed_gensim(self, X=None, model=None, **kwargs):
 
         if X is None:
-            X = self.X_tokenized
+            X = self.X_filter
 
         if model is None:
-            model = self.fasttext
+            model = self.gensim
 
         embed_dim = model.wv.vectors.shape[1]
-        idx2word = self.idx2word
         def embed(word): # EMBED A SINGLE WORD TO EMBEDDED VECTOR
-
-            if isinstance(word, int): # IF INDEX IS GIVEN, CONVERT TO WORD
-                word = idx2word[word]
             
             if word == '<pad>': # IF PAD, JUST RETURN 0 VECTOR
                 return np.zeros((1, embed_dim))
@@ -267,6 +265,14 @@ class Preprocess:
         
         X_embed = [0 for _ in X]
         for i, paper in enumerate(X):
+
+            paper = paper.split()
+            if len(paper) >= self.cfg.MAX_LEN:
+                paper = paper[:self.cfg.MAX_LEN]
+
+            else:
+                paper = paper + [0] * (self.cfg.MAX_LEN - len(paper))
+                
             X_embed[i] = np.concatenate(list(map(embed, paper)))
 
         return np.array(X_embed)
@@ -306,7 +312,7 @@ class Preprocess:
     def save_fasttext(self, model=None):
 
         if model is None:
-            model = self.fasttext
+            model = self.gensim
 
 
     def load_tokenized(self, fname=None):
@@ -339,10 +345,14 @@ class Preprocess:
     def load_fasttext(self, fname=None):
 
         if fname is None:
-            fname = f'fasttext{self.cfg.embed_dim}.model'
+            fname = f'{self.cfg.pre_embed}{self.cfg.embed_dim}.model'
 
-        self.fasttext = FastText.load(os.path.join(self.cfg.DATA_DIR, fname))
-        return self.fasttext
+        if self.cfg.pre_embed == 'fasttext':
+            self.gensim = FastText.load(os.path.join(self.cfg.DATA_DIR, fname))
+
+        elif self.cfg.pre_embed == 'word2vec':
+            self.gensim = Word2Vec.load(os.path.join(self.cfg.DATA_DIR, fname))
+        return self.gensim
 
     
     @logging_time
