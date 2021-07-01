@@ -32,7 +32,7 @@ class PaperDataset(Dataset):
 
     def __getitem__(self, idx):
 
-        paper, label = torch.tensor(self.data[idx], dtype=torch.long), torch.tensor(self.label[idx], dtype=torch.long)
+        paper, label = torch.tensor(self.data[idx], dtype=torch.float), torch.tensor(self.label[idx], dtype=torch.float)
 
         if not self.pad:
             return paper, label
