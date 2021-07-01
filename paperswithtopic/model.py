@@ -19,6 +19,7 @@ def load_model(cfg):
     return {
         'rnn': RNN,
         'lstm': LSTM,
+        'bilstm': BILSTM,
         'gru': GRU,
         'lstmattn': LSTMATTN,
         'bert': BERT,
@@ -35,13 +36,6 @@ def load_model(cfg):
     }[cfg.model_name.lower()](cfg).to(device), device
 
 
-class NaiveBayes:
-
-    def __init__(self, cfg):
-
-        pass
-
-
 class SequenceModel(nn.Module):
 
     def __init__(self, cfg):
@@ -55,6 +49,9 @@ class SequenceModel(nn.Module):
 
         if not self.cfg.pre_embed:
             self.embed_layer = nn.Embedding(self.vocab_size, self.hidden_dim)
+
+            self.gradient = []
+            self.embed_layer.register_backward_hook(self.save_gradient)
 
         self.fc = nn.Linear(self.hidden_dim, self.num_class)
         self.relu = nn.ReLU()
@@ -93,6 +90,12 @@ class SequenceModel(nn.Module):
         '''
 
         return x
+
+
+    def save_gradient(self, *args):
+        grad_input = args[1]
+        grad_output= args[2]
+        self.gradient.append(grad_output[0])
 
 
 class BERT(SequenceModel):
@@ -170,6 +173,7 @@ class ALBERT(BERT):
 
         self.config = AlbertConfig( 
             vocab_size=self.cfg.vocab_size,
+            embedding_size=self.cfg.embed_dim,
             hidden_size=self.cfg.hidden_dim,
             num_hidden_layers=self.cfg.n_layers,
             num_attention_heads=self.cfg.n_heads,
@@ -192,6 +196,7 @@ class ELECTRA(BERT):
 
         self.config = ElectraConfig( 
             vocab_size=self.cfg.vocab_size,
+            embedding_size=self.cfg.embed_dim,
             hidden_size=self.cfg.hidden_dim,
             num_hidden_layers=self.cfg.n_layers,
             num_attention_heads=self.cfg.n_heads,
@@ -300,6 +305,7 @@ class ALBERTClassification(BERTClassification):
 
         self.config = AlbertConfig( 
             vocab_size=self.cfg.vocab_size,
+            embedding_size=self.cfg.embed_dim,
             hidden_size=self.cfg.hidden_dim,
             num_hidden_layers=self.cfg.n_layers,
             num_attention_heads=self.cfg.n_heads,
@@ -397,6 +403,19 @@ class LSTM(RNN):
             hidden_size=self.hidden_dim,
             num_layers =self.n_layers,
             batch_first=True
+        )
+
+class BILSTM(RNN):
+
+    def __init__(self, cfg):
+        super().__init__(cfg)
+
+        self.seq_model = nn.LSTM(
+            input_size =self.hidden_dim,
+            hidden_size=self.hidden_dim,
+            num_layers =self.n_layers,
+            batch_first=True,
+            bidirectional=True
         )
 
 
