@@ -101,6 +101,15 @@ def revert2class(preds, cfg, topn=3):
         probas.append(preds[i][_idx].tolist())
 
     return predictions, probas
+    
+
+def class2label(labels: list, cfg):
+
+    with open(os.path.join(cfg.DATA_DIR, 'column2idx.yml'), 'r') as f:
+        column2idx = yaml.load(f)
+
+    idx = list(map(lambda x: column2idx[x], labels))
+    return torch.tensor([[0 if i not in idx else 1 for i in range(len(column2idx))]])
 
 
 if __name__=="__main__":
