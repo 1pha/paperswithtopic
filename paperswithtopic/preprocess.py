@@ -160,8 +160,15 @@ class Preprocess:
         if X is None:
             X = self.X_raw
 
-        _remove = lambda sentence: ''.join([l for l in sentence if l.isalnum() or l == ' '])
-        self.X_filter = list(map(_remove, X))
+        # _replace = lambda sentence: ''.join([l for l in sentence if l.isalnum() or l == ' '])
+        def _replace(sentence):
+            special_case = ['-', ':', '_']
+            for s in special_case:
+                sentence = sentence.replace(s, ' ')
+
+            return ''.join([l for l in sentence if l.isalnum() or l == ' '])
+
+        self.X_filter = list(map(_replace, X))
         return self.X_filter
 
 
