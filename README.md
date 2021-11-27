@@ -1,5 +1,5 @@
 # 🧻 Papers With Topic
-_*NOTICE* This project has been re-built in [this repository](https://github.com/1pha/BayesianActiveLearning)_
+_*NOTICE* This project has been re-built in [this repository](https://github.com/1pha/BayesianActiveLearning)_   
 _This repository/project was done for XAI501 2021 Spring._
 
 ## Intro
